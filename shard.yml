@@ -1,0 +1,9 @@
+name: cr-i18n
+version: 0.1.0
+
+authors:
+  - Troy Sornson <troy@sornson.io>
+
+crystal: 1.2.1
+
+license: MIT
