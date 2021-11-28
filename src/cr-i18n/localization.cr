@@ -1,65 +1,86 @@
 module Localization
-  def self.get_label(target : String, lang : String = "", locale : String = "")
-    label_logger = ::Log.for(Localization)
-    if l = LOCALE_LABELS.dig?(lang, locale, target)
-      label_logger.debug { "Successfully resolved \"#{target}\" with lang #{lang} and locale #{locale} to \"#{l}\"" }
-      l
-    elsif l = LANGUAGE_LABELS.dig?(lang, target)
-      label_logger.debug { "Successfully resolved \"#{target}\" with lang #{lang} to \"#{l}\"" }
-      l
-    elsif l = ROOT_LABELS[target]?
-      label_logger.debug { "Successfully resolved \"#{target}\" from root to \"#{l}\"" }
-      l
-    else
-      label_logger.warn { "No label found for #{target}" }
-      target
-    end
-  end
+  @@instance = Labels.new
 
-  ROOT_LABELS     = {} of String => String
-  LANGUAGE_LABELS = Hash(String, Hash(String, String)).new { |h, k| h[k] = {} of String => String }
-  LOCALE_LABELS   = Hash(String, Hash(String, Hash(String, String))).new do |h1, k1|
-    h1[k1] = Hash(String, Hash(String, String)).new { |h2, k2| h2[k2] = {} of String => String }
+  def self.get_label(target : String, lang : String = "", locale : String = "")
+    @@instance.get_label(target, lang, locale)
   end
 
   def self.load_labels(root : String)
-    ROOT_LABELS.clear
-    LANGUAGE_LABELS.clear
-    LOCALE_LABELS.clear
-    label_logger = ::Log.for(Localization)
-    unless Dir.exists?("#{root}")
-      label_logger.info { "Label directory '#{root}' doesn't exist, loading nothing" }
-      return
-    end
+    raise "Label directory '#{root}' doesn't exist" unless Dir.exists?("#{root}")
+    labels = Labels.new
     Dir.each_child ("#{root}") do |lang_or_file|
       if File.file?("#{root}/#{lang_or_file}") && supported?(lang_or_file)
         loader = LabelLoader.new("#{root}/#{lang_or_file}")
-        labels = loader.read
-        ROOT_LABELS.merge!(labels)
+        root_labels = loader.read
+        labels.add_root(root_labels)
       elsif File.directory?("#{root}/#{lang_or_file}")
         Dir.each_child("#{root}/#{lang_or_file}") do |locale_or_file|
           if File.file?("#{root}/#{lang_or_file}/#{locale_or_file}") && supported?(locale_or_file)
             loader = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}")
-            labels = loader.read
-            LANGUAGE_LABELS[lang_or_file].merge!(labels)
+            lang_labels = loader.read
+            labels.add_language(lang_labels, lang_or_file)
           elsif File.directory?("#{root}/#{lang_or_file}/#{locale_or_file}")
             Dir.each_child("#{root}/#{lang_or_file}/#{locale_or_file}") do |locale_file|
               if File.file?("#{root}/#{lang_or_file}/#{locale_or_file}/#{locale_file}") && supported?(locale_file)
                 loader = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}/#{locale_file}")
-                labels = loader.read
-                LOCALE_LABELS[lang_or_file][locale_or_file].merge!(labels)
+                locale_labels = loader.read
+                labels.add_locale(locale_labels, lang_or_file, locale_or_file)
               end
             end
           end
         end
       end
     end
+    @@instance = labels
   end
 
   private def self.supported?(name)
     name.ends_with?("json") ||
       name.ends_with?("yml") ||
       name.ends_with?("yaml")
+  end
+
+  class Labels
+    @root_labels = {} of String => String
+    @language_labels = Hash(String, Hash(String, String)).new { |h, k| h[k] = {} of String => String }
+    @locale_labels = Hash(String, Hash(String, Hash(String, String))).new do |h1, k1|
+      h1[k1] = Hash(String, Hash(String, String)).new { |h2, k2| h2[k2] = {} of String => String }
+    end
+    @logger = ::Log.for(Labels)
+    @missed = Set(String).new
+
+    def add_root(labels : Hash(String, String))
+      @root_labels.merge!(labels)
+    end
+
+    def add_language(labels : Hash(String, String), language : String)
+      @language_labels[language].merge!(labels)
+    end
+
+    def add_locale(labels : Hash(String, String), language : String, locale : String)
+      @locale_labels[language][locale].merge!(labels)
+    end
+
+    def get_label(target : String, language : String = "", locale : String = "")
+      if l = @locale_labels.dig?(language, locale, target)
+        @logger.debug { "Successfully resolved \"#{target}\" with language #{language} and locale #{locale} to \"#{l}\"" }
+        l
+      elsif l = @language_labels.dig?(language, target)
+        @logger.debug { "Successfully resolved \"#{target}\" with language #{language} to \"#{l}\"" }
+        l
+      elsif l = @root_labels[target]?
+        @logger.debug { "Successfully resolved \"#{target}\" from root to \"#{l}\"" }
+        l
+      else
+        @logger.warn { "No label found for #{target}" }
+        @missed << target
+        "Label for '#{target}' not defined"
+      end
+    end
+
+    def missed
+      @missed
+    end
   end
 
   class LabelLoader

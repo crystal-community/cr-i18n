@@ -1,1 +1,5 @@
 label: label in root
+section:
+  label: another label in root
+  nested_section:
+    something: yet another label in root
