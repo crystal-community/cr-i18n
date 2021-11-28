@@ -4,6 +4,16 @@ version: 0.1.0
 authors:
   - Troy Sornson <troy@sornson.io>
 
+development_dependencies:
+  spectator:
+    gitlab: arctic-fox/spectator
+  ameba:
+    github: crystal-ameba/ameba
+    version: ~> 0.13.0
+  crystal-kcov:
+    git: ssh://git@git.chugger.lan:2222/tsornson/crystal-kcov
+
+
 crystal: 1.2.1
 
 license: MIT

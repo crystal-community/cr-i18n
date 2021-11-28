@@ -1,6 +1,4 @@
-# TODO: Write documentation for `Cr::I18n`
-module Cr::I18n
-  VERSION = "0.1.0"
+require "json"
+require "yaml"
 
-  # TODO: Put your code here
-end
+require "./cr-i18n/*"
