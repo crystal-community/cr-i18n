@@ -2,18 +2,30 @@ require "./spec_helper"
 
 Spectator.describe "Label loader" do
   it "loads labels" do
-    Localization.load_labels("./spec/spec1")
+    I18n.load_labels("./spec/spec1")
 
-    expect(Localization.get_label("label")).to eq "label in root"
-    expect(Localization.get_label("label", "en")).to eq "label in english"
-    expect(Localization.get_label("label", "en", "us")).to eq "label in american english"
+    expect(I18n.get_label("label")).to eq "label in root"
+    expect(I18n.get_label("label", "en")).to eq "label in english"
+    expect(I18n.get_label("label", "en", "us")).to eq "label in american english"
   end
 
   it "supports nested labels" do
-    labels = Localization.load_labels("./spec/spec1")
+    labels = I18n.load_labels("./spec/spec1")
 
     expect(labels.get_label("section.nested_section.something")).to eq "yet another label in root"
     expect(labels.get_label("section.nested_section.something", "en")).to eq "yet another label in root"
     expect(labels.get_label("section.nested_section.something", "en", "us")).to eq "yet another label in root"
+  end
+
+  it "records missing labels" do
+    labels = I18n.load_labels("./spec/spec1")
+
+    expect(labels.missed).to eq Set(String).new
+    expect(labels.get_label("nope")).to eq "Label for 'nope' not defined"
+    expect(labels.missed).to eq Set{"nope"}
+    expect(labels.get_label("still nope")).to eq "Label for 'still nope' not defined"
+    expect(labels.missed).to eq Set{"nope", "still nope"}
+    expect(labels.get_label("nope")).to eq "Label for 'nope' not defined"
+    expect(labels.missed).to eq Set{"nope", "still nope"}
   end
 end

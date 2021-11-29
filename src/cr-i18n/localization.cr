@@ -1,8 +1,12 @@
-module Localization
+module I18n
   @@instance = Labels.new
 
   def self.get_label(target : String, lang : String = "", locale : String = "")
     @@instance.get_label(target, lang, locale)
+  end
+
+  def self.missed
+    @@instance.missed
   end
 
   def self.load_labels(root : String)
@@ -10,20 +14,17 @@ module Localization
     labels = Labels.new
     Dir.each_child ("#{root}") do |lang_or_file|
       if File.file?("#{root}/#{lang_or_file}") && supported?(lang_or_file)
-        loader = LabelLoader.new("#{root}/#{lang_or_file}")
-        root_labels = loader.read
+        root_labels = LabelLoader.new("#{root}/#{lang_or_file}").read
         labels.add_root(root_labels)
       elsif File.directory?("#{root}/#{lang_or_file}")
         Dir.each_child("#{root}/#{lang_or_file}") do |locale_or_file|
           if File.file?("#{root}/#{lang_or_file}/#{locale_or_file}") && supported?(locale_or_file)
-            loader = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}")
-            lang_labels = loader.read
+            lang_labels = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}").read
             labels.add_language(lang_labels, lang_or_file)
           elsif File.directory?("#{root}/#{lang_or_file}/#{locale_or_file}")
             Dir.each_child("#{root}/#{lang_or_file}/#{locale_or_file}") do |locale_file|
               if File.file?("#{root}/#{lang_or_file}/#{locale_or_file}/#{locale_file}") && supported?(locale_file)
-                loader = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}/#{locale_file}")
-                locale_labels = loader.read
+                locale_labels = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}/#{locale_file}").read
                 labels.add_locale(locale_labels, lang_or_file, locale_or_file)
               end
             end
