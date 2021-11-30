@@ -79,13 +79,26 @@ my_label.get_label("section.yet_another_label") # => "labels can be grouped this
 # The I18n module keeps track of the last labels read and provides static methods to access them.
 # The above examples could all be run while replacing `my_labels` with `I18n`.
 I18n.get_label("label", "en", "us") # => "this is the american english version of the label"
-
 ```
 
 While writing labels, keeping label nesting to 2-3 layers deep maximum is probably best, otherwise it may get hard to keep track of which labels
 are related to which other labels. Since labels may change for any number of reasons but the functioning code may not, it might be desirable
-to have a separate "test only" label file for all labels that won't change. That way if a label does change "in production", tests verifying output
-won't also need to be updated to pass again.
+to have a separate "test only" label file for all tests that will be receiving labels as output. That way if a label does change "in production",
+tests verifying output won't also need to be updated to pass again.
+
+```crystal
+Spec.before_all do
+  I18n.load_labels("spec/test_labels")
+end
+
+...
+
+  it "returns correct output" do
+    something.some_method.should eq "Contrived label taken from spec/test_labels instead of production labels"
+  end
+
+...
+```
 
 ## Contributors
 
