@@ -93,6 +93,8 @@ module I18n
         return load(JSON.parse(file)) if @file_name.ends_with?(".json")
         return load(YAML.parse(file)) if @file_name.ends_with?(".yml") || @file_name.ends_with?(".yaml")
         raise "Unknown file extension in file #{@file_name}, can only support files ending with 'json', 'yml', or 'yaml'"
+      rescue e
+        raise "Error while reading file #{@file_name}: #{e.message}"
       end
     end
 
