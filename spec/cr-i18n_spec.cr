@@ -28,4 +28,20 @@ Spectator.describe "Label loader" do
     expect(labels.get_label("nope")).to eq "Label for 'nope' not defined"
     expect(labels.missed).to eq Set{"nope", "still nope"}
   end
+
+  it "raises when missing a label" do
+    labels = I18n.load_labels("./spec/spec1")
+
+    expect(labels.get_label("nope")).to eq "Label for 'nope' not defined"
+    expect(labels.missed).to eq Set{"nope"}
+
+    labels.raise_if_missing = true
+
+    expect { labels.get_label("nope") }.to raise_error("Label for 'nope' not defined")
+
+    labels.raise_if_missing = false
+
+    expect(labels.get_label("nope")).to eq "Label for 'nope' not defined"
+    expect(labels.missed).to eq Set{"nope"}
+  end
 end

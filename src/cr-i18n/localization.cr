@@ -9,6 +9,14 @@ module I18n
     @@instance.missed
   end
 
+  def self.raise_if_missing
+    @@instance.raise_if_missing
+  end
+
+  def self.raise_if_missing=(value : Bool)
+    @@instance.raise_if_missing = value
+  end
+
   def self.load_labels(root : String)
     raise "Label directory '#{root}' doesn't exist" unless Dir.exists?("#{root}")
     labels = Labels.new
@@ -42,6 +50,8 @@ module I18n
   end
 
   class Labels
+    property raise_if_missing = false
+
     @root_labels = {} of String => String
     @language_labels = Hash(String, Hash(String, String)).new { |h, k| h[k] = {} of String => String }
     @locale_labels = Hash(String, Hash(String, Hash(String, String))).new do |h1, k1|
@@ -74,8 +84,10 @@ module I18n
         l
       else
         @logger.warn { "No label found for #{target}" }
+        warning = "Label for '#{target}' not defined"
+        raise warning if raise_if_missing
         @missed << target
-        "Label for '#{target}' not defined"
+        warning
       end
     end
 
