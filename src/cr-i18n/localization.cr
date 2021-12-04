@@ -72,23 +72,26 @@ module I18n
       @locale_labels[language][locale].merge!(labels)
     end
 
-    def get_label(target : String, language : String = "", locale : String = "")
+    def get_label(target : String, language : String = "", locale : String = "", *data)
+      label = "Label for '#{target}' not defined"
       if l = @locale_labels.dig?(language, locale, target)
         @logger.debug { "Successfully resolved \"#{target}\" with language #{language} and locale #{locale} to \"#{l}\"" }
-        l
+        label = l
       elsif l = @language_labels.dig?(language, target)
         @logger.debug { "Successfully resolved \"#{target}\" with language #{language} to \"#{l}\"" }
-        l
+        label = l
       elsif l = @root_labels[target]?
         @logger.debug { "Successfully resolved \"#{target}\" from root to \"#{l}\"" }
-        l
+        label = l
       else
         @logger.warn { "No label found for #{target}" }
-        warning = "Label for '#{target}' not defined"
-        raise warning if raise_if_missing
+        raise label if raise_if_missing
         @missed << target
-        warning
       end
+      data.each_with_index do |term, i|
+        label = label.gsub("{#{i}}", term)
+      end
+      label
     end
 
     def missed
