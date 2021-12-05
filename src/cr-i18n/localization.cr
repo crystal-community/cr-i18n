@@ -1,4 +1,4 @@
-module I18n
+module CrI18n
   @@instance = Labels.new
 
   # LABEL_DIRECTORY will be a list of one (but we can modify this constant during compile time now)

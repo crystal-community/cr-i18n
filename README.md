@@ -59,10 +59,10 @@ There are two methods to initialize labels - one requires a hardcoded path and p
 require "cr-i18n"
 
 # Initializing method one - hardcoded path
-my_labels = I18n.compiler_load_labels("labels")
+my_labels = CrI18n.compiler_load_labels("labels")
 
 # Initializing method two - configured or interpolated path
-my_labels = I18n.load_labels("labels")
+my_labels = CrI18n.load_labels("labels")
 ```
 
 ### Retrieving Labels
@@ -70,7 +70,7 @@ my_labels = I18n.load_labels("labels")
 Labels follow a hierarchy, with language-locale being the first to be checked, followed by language only, and finally using the root (top level) label files for finding a label value.
 
 ```crystal
-# To get the benefits of compiler checking, use the new top level `label` macro. This delegates to `I18n.get_label` as described below
+# To get the benefits of compiler checking, use the new top level `label` macro. This delegates to `CrI18n.get_label` as described below
 label("label") # => "this is the fallback label, in case there's not a language or locale version of this"
 
 # Getting a label without a language or locale specified (root)
@@ -86,9 +86,9 @@ my_labels.get_label("label", "en", "us") # => "this is the american english vers
 my_label.get_label("section.other_label") # => "this is a nested label"
 my_label.get_label("section.yet_another_label") # => "labels can be grouped this way"
 
-# The I18n module keeps track of the last labels read and provides static methods to access them.
-# The above examples could all be run while replacing `my_labels` with `I18n`.
-I18n.get_label("label", "en", "us") # => "this is the american english version of the label"
+# The CrI18n module keeps track of the last labels read and provides static methods to access them.
+# The above examples could all be run while replacing `my_labels` with `CrI18n`.
+CrI18n.get_label("label", "en", "us") # => "this is the american english version of the label"
 label("label", "en") # ...
 label("label", "en", "us") # ...
 ```
@@ -98,7 +98,7 @@ label("label", "en", "us") # ...
 After developingy, you may have put in dummy labels in place just to get things working. To now find all those locations so you can remove the dummy values and put them in label files, you have a few options, depending on how you initialized above.
 
 * Use the compiler flag `-Denforce_labels` to trigger compiler enforcements for all usages of the `label` macro
-* Use `I18n.raise_if_missing = true` or `my_labels.raise_if_missing = true` to trigger runtime exceptions instead
+* Use `CrI18n.raise_if_missing = true` or `my_labels.raise_if_missing = true` to trigger runtime exceptions instead
 
 Examples:
 
@@ -118,15 +118,15 @@ my_label.get_label("nope") # => "nope"
 my_label.missed # => Set{"nope"}
 
 # If you wish these to become runtime errors, can set the raise_if_missing config
-I18n.raise_if_missing = true
+CrI18n.raise_if_missing = true
 # OR
 my_labels.raise_if_missing = true
 
 my_label.get_label("nope") # => Exception thrown
 
 # SOMEWHAT COMBINED
-# Because the `label` macro delegates to I18n.get_label underneath, you can get some overlapping behavior
-I18n.raise_if_missing = true
+# Because the `label` macro delegates to CrI18n.get_label underneath, you can get some overlapping behavior
+CrI18n.raise_if_missing = true
 label("this doesn't exist") # => Compiler error if -Denforce_labels, or runtime error otherwise
 ```
 
@@ -139,7 +139,7 @@ tests verifying output won't also need to be updated to pass again.
 
 ```crystal
 Spec.before_all do
-  I18n.compiler_load_labels("spec/test_labels")
+  CrI18n.compiler_load_labels("spec/test_labels")
 end
 
 ...
