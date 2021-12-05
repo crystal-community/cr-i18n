@@ -78,4 +78,22 @@ Spectator.describe "Label loader" do
       end
     end
   end
+
+  it "static methods support setting language and locale context" do
+    CrI18n.load_labels("./spec/spec1")
+    CrI18n.with_language("en") do
+      expect(CrI18n.get_label("label")).to eq "label in english"
+    end
+
+    CrI18n.with_language_and_locale("en", "us") do
+      expect(CrI18n.get_label("label")).to eq "label in american english"
+    end
+
+    # and nesting
+    CrI18n.with_language_and_locale("nope", "still-nope") do
+      CrI18n.with_language_and_locale("en", "us") do
+        expect(CrI18n.get_label("label")).to eq "label in american english"
+      end
+    end
+  end
 end

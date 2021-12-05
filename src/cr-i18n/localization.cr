@@ -21,6 +21,18 @@ module CrI18n
     @@instance.raise_if_missing = value
   end
 
+  def self.with_language(lang : String, &)
+    @@instance.with_language(lang) do
+      yield
+    end
+  end
+
+  def self.with_language_and_locale(lang : String, locale : String, &)
+    @@instance.with_language_and_locale(lang, locale) do
+      yield
+    end
+  end
+
   def self.load_labels(root : String)
     raise "Label directory '#{root}' doesn't exist" unless Dir.exists?("#{root}")
     labels = Labels.new
