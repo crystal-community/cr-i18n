@@ -5,6 +5,8 @@ This shards aims to provide a simple interface for obtaining the correct label o
 This shard does not translate anything, only organizes any labels from multiple languages and locales, so obtaining the correct label
 is more streamlined.
 
+Lots of inspiration is taken from [crystal-i18n/i18n](https://crystal-i18n.github.io/) as well as (BrucePerens/internationalize)[https://github.com/BrucePerens/internationalize].
+
 ## Installation
 
 1. Add the dependency to your `shard.yml`:

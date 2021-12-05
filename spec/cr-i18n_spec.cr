@@ -52,7 +52,7 @@ Spectator.describe "Label loader" do
   it "supports parameterized labels" do
     labels = CrI18n.load_labels("./spec/spec1")
 
-    expect(labels.get_label("parameters", "", "", "Tom", "log")).to eq "Tom jumped over the log"
+    expect(labels.get_label("parameters", "", "", name: "Tom", object: "log")).to eq "Tom jumped over the log"
   end
 
   it "has the compiler check labels" do

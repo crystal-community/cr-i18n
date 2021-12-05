@@ -105,7 +105,7 @@ module CrI18n
       @contexts.delete(Fiber.current.object_id) if @contexts[Fiber.current.object_id].empty?
     end
 
-    def get_label(target : String, language : String = "", locale : String = "", *data)
+    def get_label(target : String, language : String = "", locale : String = "", **splat)
       language = @contexts[Fiber.current.object_id][-1][:language] if language.empty? && @contexts.size > 0
       locale = @contexts[Fiber.current.object_id][-1][:locale] if locale.empty? && @contexts.size > 0
       label = target
@@ -123,8 +123,8 @@ module CrI18n
         raise label if raise_if_missing
         @missed << target
       end
-      data.each_with_index do |term, i|
-        label = label.gsub("{#{i}}", term)
+      splat.each_with_index do |name, val|
+        label = label.gsub("%{#{name}}", val)
       end
       label
     end
