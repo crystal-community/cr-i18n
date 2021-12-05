@@ -60,4 +60,22 @@ Spectator.describe "Label loader" do
     # Will throw an error at compile time when the -Denforce_labels is specified
     expect(label(does.not.exist)).to eq "does.not.exist"
   end
+
+  it "supports setting language and locale context" do
+    labels = CrI18n.load_labels("./spec/spec1")
+    labels.with_language("en") do
+      expect(labels.get_label("label")).to eq "label in english"
+    end
+
+    labels.with_language_and_locale("en", "us") do
+      expect(labels.get_label("label")).to eq "label in american english"
+    end
+
+    # and nesting
+    labels.with_language_and_locale("nope", "still-nope") do
+      labels.with_language_and_locale("en", "us") do
+        expect(labels.get_label("label")).to eq "label in american english"
+      end
+    end
+  end
 end

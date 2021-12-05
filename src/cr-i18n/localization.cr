@@ -63,6 +63,7 @@ module CrI18n
     end
     @logger = ::Log.for(Labels)
     @missed = Set(String).new
+    @contexts = Hash(UInt64, Array(NamedTuple(language: String, locale: String))).new { |h, k| h[k] = [] of NamedTuple(language: String, locale: String) }
 
     def add_root(labels : Hash(String, String))
       @root_labels.merge!(labels)
@@ -76,7 +77,25 @@ module CrI18n
       @locale_labels[language][locale].merge!(labels)
     end
 
+    def with_language(lang : String, &)
+      # key by fiber id so we can be thread safe
+      @contexts[Fiber.current.object_id] << {language: lang, locale: ""}
+      yield
+      @contexts[Fiber.current.object_id].pop
+      @contexts.delete(Fiber.current.object_id) if @contexts[Fiber.current.object_id].empty?
+    end
+
+    def with_language_and_locale(language : String, locale : String)
+      # key by fiber id so we can be thread safe
+      @contexts[Fiber.current.object_id] << {language: language, locale: locale}
+      yield
+      @contexts[Fiber.current.object_id].pop
+      @contexts.delete(Fiber.current.object_id) if @contexts[Fiber.current.object_id].empty?
+    end
+
     def get_label(target : String, language : String = "", locale : String = "", *data)
+      language = @contexts[Fiber.current.object_id][-1][:language] if language.empty? && @contexts.size > 0
+      locale = @contexts[Fiber.current.object_id][-1][:locale] if locale.empty? && @contexts.size > 0
       label = target
       if l = @locale_labels.dig?(language, locale, target)
         @logger.debug { "Successfully resolved \"#{target}\" with language #{language} and locale #{locale} to \"#{l}\"" }
