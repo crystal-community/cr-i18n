@@ -1,6 +1,10 @@
 module I18n
   @@instance = Labels.new
 
+  # LABEL_DIRECTORY will be a list of one (but we can modify this constant during compile time now)
+  LABEL_DIRECTORY = [] of String
+  DEFINED_LABELS  = [] of String
+
   def self.get_label(target : String, lang : String = "", locale : String = "")
     @@instance.get_label(target, lang, locale)
   end
@@ -73,7 +77,7 @@ module I18n
     end
 
     def get_label(target : String, language : String = "", locale : String = "", *data)
-      label = "Label for '#{target}' not defined"
+      label = target
       if l = @locale_labels.dig?(language, locale, target)
         @logger.debug { "Successfully resolved \"#{target}\" with language #{language} and locale #{locale} to \"#{l}\"" }
         label = l

@@ -49,28 +49,38 @@ label: this is the american english version of the label
 NOTE: File names don't matter, nor do all labels need to be in the same file. _All label files in the same directory will be read and combined for that language and locale_. Directory names
 are how the language -> locale lookup happens.
 
-With the above language files set up, an example of using this in crystal can be seen by:
+With the above language files set up, an example of using this in crystal can be seen below.
 
+### Initializing Labels
+
+There are two methods to initialize labels - one requires a hardcoded path and provides compiler checks for all labels, and the other one can accept a string inteprolated / configured value for the root of the label file. The former initialization also triggers the latter, so you can get both advantages when hardcoding.
 
 ```crystal
 require "cr-i18n"
 
-my_labels = I18n.load_labels("labels")
+# Initializing method one - hardcoded path
+my_labels = I18n.compiler_load_labels("labels")
 
-# Getting a label without a language or locale specified
-my_labels.get_label("label") # => "this is the fallback label, in case tehre's not a language or locale version of this"
+# Initializing method two - configured or interpolated path
+my_labels = I18n.load_labels("labels")
+```
+
+### Retrieving Labels
+
+Labels follow a hierarchy, with language-locale being the first to be checked, followed by language only, and finally using the root (top level) label files for finding a label value.
+
+```crystal
+# To get the benefits of compiler checking, use the new top level `label` macro. This delegates to `I18n.get_label` as described below
+label("label") # => "this is the fallback label, in case there's not a language or locale version of this"
+
+# Getting a label without a language or locale specified (root)
+my_labels.get_label("label") # => "this is the fallback label, in case there's not a language or locale version of this"
 
 # Getting a label for a language
 my_labels.get_label("label", "en") # => "this is the english version of the label"
 
 # ... and by locale
 my_labels.get_label("label", "en", "us") # => "this is the american english version of the label"
-
-# Trying to retrieve a non-existent label doesn't throw
-my_label.get_label("nope") # => "Label for 'nope' not defined"
-
-# You can get a set of all labels that were queried for, but don't exist
-my_label.missed # => Set{"nope"}
 
 # As JSON and YAML supports maps, nested labels can be queried using dot notation
 my_label.get_label("section.other_label") # => "this is a nested label"
@@ -79,7 +89,48 @@ my_label.get_label("section.yet_another_label") # => "labels can be grouped this
 # The I18n module keeps track of the last labels read and provides static methods to access them.
 # The above examples could all be run while replacing `my_labels` with `I18n`.
 I18n.get_label("label", "en", "us") # => "this is the american english version of the label"
+label("label", "en") # ...
+label("label", "en", "us") # ...
 ```
+
+### Looking For Missing Labels
+
+After developingy, you may have put in dummy labels in place just to get things working. To now find all those locations so you can remove the dummy values and put them in label files, you have a few options, depending on how you initialized above.
+
+* Use the compiler flag `-Denforce_labels` to trigger compiler enforcements for all usages of the `label` macro
+* Use `I18n.raise_if_missing = true` or `my_labels.raise_if_missing = true` to trigger runtime exceptions instead
+
+Examples:
+
+```crystal
+# COMPILER CHECKS
+# If you wish the compiler to start throwing errors, build with the -Denforce_labels compiler flag. The `label` macro will now trigger compiler errors.
+label("this is my dummy text") # => Compiler error now
+
+# Without the -Denforce_labels flag, the `label` macro returns the string as-is
+label("this is my dummy text") # => "this is my dummy text"
+
+# RUNTIME CHECKS
+# By default, trying to retrieve a non-existent label doesn't throw
+my_label.get_label("nope") # => "nope"
+
+# You can get a set of all labels that were queried for, but don't exist
+my_label.missed # => Set{"nope"}
+
+# If you wish these to become runtime errors, can set the raise_if_missing config
+I18n.raise_if_missing = true
+# OR
+my_labels.raise_if_missing = true
+
+my_label.get_label("nope") # => Exception thrown
+
+# SOMEWHAT COMBINED
+# Because the `label` macro delegates to I18n.get_label underneath, you can get some overlapping behavior
+I18n.raise_if_missing = true
+label("this doesn't exist") # => Compiler error if -Denforce_labels, or runtime error otherwise
+```
+
+### Testing with Labels
 
 While writing labels, keeping label nesting to 2-3 layers deep maximum is probably best, otherwise it may get hard to keep track of which labels
 are related to which other labels. Since labels may change for any number of reasons but the functioning code may not, it might be desirable
@@ -88,7 +139,7 @@ tests verifying output won't also need to be updated to pass again.
 
 ```crystal
 Spec.before_all do
-  I18n.load_labels("spec/test_labels")
+  I18n.compiler_load_labels("spec/test_labels")
 end
 
 ...
