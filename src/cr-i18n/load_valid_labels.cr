@@ -7,10 +7,11 @@ directory = ARGV[0]
 
 module CrI18n
   class Labels
-    getter root_labels
+    getter root_labels, language_labels, locale_labels
   end
 end
 
 labels = CrI18n.load_labels(directory)
 
-puts labels.root_labels.keys.to_s
+puts "[#{labels.root_labels.keys}]"
+# puts labels.root_labels.keys

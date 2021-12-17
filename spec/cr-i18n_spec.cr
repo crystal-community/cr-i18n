@@ -41,7 +41,7 @@ Spectator.describe "Label loader" do
 
     labels.raise_if_missing = true
 
-    expect { labels.get_label("nope") }.to raise_error("nope")
+    expect { labels.get_label("nope") }.to raise_error("Label nope not found")
 
     labels.raise_if_missing = false
 
@@ -53,12 +53,7 @@ Spectator.describe "Label loader" do
     labels = CrI18n.load_labels("./spec/spec1")
 
     expect(labels.get_label("parameters", name: "Tom", object: "log")).to eq "Tom jumped over the log"
-  end
-
-  it "has the compiler check labels" do
-    CrI18n.compiler_load_labels("./spec/spec1")
-    # Will throw an error at compile time when the -Denforce_labels is specified
-    expect(label(does.not.exist)).to eq "does.not.exist"
+    expect(label("parameters", name: "Tom", object: "log")).to eq "Tom jumped over the log"
   end
 
   it "supports setting language and locale context" do
@@ -94,6 +89,20 @@ Spectator.describe "Label loader" do
       CrI18n.with_language_and_locale("en", "us") do
         expect(CrI18n.get_label("label")).to eq "label in american english"
       end
+    end
+  end
+
+  it "pluralizes labels" do
+    CrI18n::Pluralization.auto_register_rules
+  end
+
+  context "with compiler checking" do
+    it "has the compiler check labels" do
+      CrI18n.compiler_load_labels("./spec/plural_spec")
+      # Will throw an error at compile time when the -Denforce_labels is specified
+      # expect(label(does.not.exist)).to eq "does.not.exist"
+      # expect(label(label, count: 1)).to eq "label"
+      # TODO: test pluralization with compiler checks
     end
   end
 end

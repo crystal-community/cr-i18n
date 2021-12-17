@@ -5,8 +5,8 @@ module CrI18n
   LABEL_DIRECTORY = [] of String
   DEFINED_LABELS  = [] of String
 
-  def self.get_label(target : String, lang : String = "", locale : String = "")
-    @@instance.get_label(target, lang, locale)
+  def self.get_label(target : String, lang : String = "", locale : String = "", count : (Float | Int)? = nil, **splat)
+    @@instance.get_label(target, lang, locale, count, **splat)
   end
 
   def self.missed
@@ -105,28 +105,45 @@ module CrI18n
       @contexts.delete(Fiber.current.object_id) if @contexts[Fiber.current.object_id].empty?
     end
 
-    def get_label(target : String, language : String = "", locale : String = "", **splat)
+    def get_label(target : String, language : String = "", locale : String = "", count : (Float | Int)? = nil, **splat)
       language = @contexts[Fiber.current.object_id][-1][:language] if language.empty? && @contexts.size > 0
       locale = @contexts[Fiber.current.object_id][-1][:locale] if locale.empty? && @contexts.size > 0
       label = target
+      if count
+        if plural = Pluralization.pluralize(count, language, locale)
+          plural_label = "#{label}.#{plural}"
+        end
+      end
+
+      if plural_label
+        ret = get_label?(plural_label, language, locale) || get_label?(label, language, locale) || label
+      else
+        ret = get_label?(label, language, locale) || label
+        raise "Label #{label} not found" if label == target && raise_if_missing
+      end
+
+      splat.each_with_index do |name, val|
+        ret = ret.gsub("%{#{name}}", val)
+      end
+      ret
+    end
+
+    private def get_label?(target : String, language : String, locale : String)
       if l = @locale_labels.dig?(language, locale, target)
         @logger.debug { "Successfully resolved \"#{target}\" with language #{language} and locale #{locale} to \"#{l}\"" }
-        label = l
+        return l
       elsif l = @language_labels.dig?(language, target)
         @logger.debug { "Successfully resolved \"#{target}\" with language #{language} to \"#{l}\"" }
-        label = l
+        return l
       elsif l = @root_labels[target]?
         @logger.debug { "Successfully resolved \"#{target}\" from root to \"#{l}\"" }
-        label = l
+        return l
       else
         @logger.warn { "No label found for #{target}" }
-        raise label if raise_if_missing
         @missed << target
       end
-      splat.each_with_index do |name, val|
-        label = label.gsub("%{#{name}}", val)
-      end
-      label
+
+      nil
     end
 
     def missed
