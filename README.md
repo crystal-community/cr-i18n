@@ -82,10 +82,10 @@ my_labels.get_label("label") # => "this is the fallback label, in case there's n
 my_labels.get_label("label", "en") # => "this is the english version of the label"
 
 # ... and by locale
-my_labels.get_label("label", "en", "us") # => "this is the american english version of the label"
+my_labels.get_label("label", "en-us") # => "this is the american english version of the label"
 
 # You can also set up the context for a block of label retrievals
-my_labels.with_language_and_locale("en", "us") do # or just `with_language`
+my_labels.with_locale("en-us") do
   my_labels.get_label("label") # => "this is the american english version of the label"
 end
 
@@ -95,9 +95,9 @@ my_label.get_label("section.yet_another_label") # => "labels can be grouped this
 
 # The CrI18n module keeps track of the last labels read and provides static methods to access them.
 # The above examples could all be run while replacing `my_labels` with `CrI18n`.
-CrI18n.get_label("label", "en", "us") # => "this is the american english version of the label"
+CrI18n.get_label("label", "en-us") # => "this is the american english version of the label"
 label("label", "en") # ...
-label("label", "en", "us") # ...
+label("label", "en-us") # ...
 ```
 
 ### Looking For Missing Labels

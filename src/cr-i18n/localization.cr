@@ -5,8 +5,8 @@ module CrI18n
   LABEL_DIRECTORY = [] of String
   DEFINED_LABELS  = [] of String
 
-  def self.get_label(target : String, lang : String = "", locale : String = "", count : (Float | Int)? = nil, **splat)
-    @@instance.get_label(target, lang, locale, count, **splat)
+  def self.get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)
+    @@instance.get_label(target, lang_locale, count, **splat)
   end
 
   def self.missed
@@ -21,14 +21,18 @@ module CrI18n
     @@instance.raise_if_missing = value
   end
 
-  def self.with_language(lang : String, &)
-    @@instance.with_language(lang) do
-      yield
+  def self.parse_locale(lang_locale : String)
+    if lang_locale.count('-') >= 1
+      lang, locale = lang_locale.split('-', 2)
+    else
+      lang = lang_locale
     end
+
+    [lang.downcase, locale ? locale.downcase : ""]
   end
 
-  def self.with_language_and_locale(lang : String, locale : String, &)
-    @@instance.with_language_and_locale(lang, locale) do
+  def self.with_locale(lang_locale : String, &)
+    @@instance.with_locale(lang_locale) do
       yield
     end
   end
@@ -89,25 +93,26 @@ module CrI18n
       @locale_labels[language][locale].merge!(labels)
     end
 
-    def with_language(lang : String, &)
+    def with_locale(lang_locale : String)
+      lang, locale = CrI18n.parse_locale(lang_locale)
+
       # key by fiber id so we can be thread safe
-      @contexts[Fiber.current.object_id] << {language: lang, locale: ""}
+      @contexts[Fiber.current.object_id] << {language: lang, locale: locale}
       yield
       @contexts[Fiber.current.object_id].pop
       @contexts.delete(Fiber.current.object_id) if @contexts[Fiber.current.object_id].empty?
     end
 
-    def with_language_and_locale(language : String, locale : String)
-      # key by fiber id so we can be thread safe
-      @contexts[Fiber.current.object_id] << {language: language, locale: locale}
-      yield
-      @contexts[Fiber.current.object_id].pop
-      @contexts.delete(Fiber.current.object_id) if @contexts[Fiber.current.object_id].empty?
-    end
+    def get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)
+      language, locale = CrI18n.parse_locale(lang_locale)
+      if language.empty? && @contexts.size > 0
+        curr_context = @contexts[Fiber.current.object_id][-1]
+        language = curr_context[:language]
+        if locale.empty?
+          locale = curr_context[:locale]
+        end
+      end
 
-    def get_label(target : String, language : String = "", locale : String = "", count : (Float | Int)? = nil, **splat)
-      language = @contexts[Fiber.current.object_id][-1][:language] if language.empty? && @contexts.size > 0
-      locale = @contexts[Fiber.current.object_id][-1][:locale] if locale.empty? && @contexts.size > 0
       label = target
       if count
         if plural = Pluralization.pluralize(count, language, locale)

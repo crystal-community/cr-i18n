@@ -6,11 +6,11 @@ Spectator.describe "Label loader" do
 
     expect(CrI18n.get_label("label")).to eq "label in root"
     expect(CrI18n.get_label("label", "en")).to eq "label in english"
-    expect(CrI18n.get_label("label", "en", "us")).to eq "label in american english"
+    expect(CrI18n.get_label("label", "en-us")).to eq "label in american english"
 
     expect(label("label")).to eq "label in root"
     expect(label("label", "en")).to eq "label in english"
-    expect(label("label", "en", "us")).to eq "label in american english"
+    expect(label("label", "en-us")).to eq "label in american english"
   end
 
   it "supports nested labels" do
@@ -18,7 +18,7 @@ Spectator.describe "Label loader" do
 
     expect(labels.get_label("section.nested_section.something")).to eq "yet another label in root"
     expect(labels.get_label("section.nested_section.something", "en")).to eq "yet another label in root"
-    expect(labels.get_label("section.nested_section.something", "en", "us")).to eq "yet another label in root"
+    expect(labels.get_label("section.nested_section.something", "en-us")).to eq "yet another label in root"
   end
 
   it "records missing labels" do
@@ -58,17 +58,17 @@ Spectator.describe "Label loader" do
 
   it "supports setting language and locale context" do
     labels = CrI18n.load_labels("./spec/spec1")
-    labels.with_language("en") do
+    labels.with_locale("en") do
       expect(labels.get_label("label")).to eq "label in english"
     end
 
-    labels.with_language_and_locale("en", "us") do
+    labels.with_locale("EN-US") do
       expect(labels.get_label("label")).to eq "label in american english"
     end
 
     # and nesting
-    labels.with_language_and_locale("nope", "still-nope") do
-      labels.with_language_and_locale("en", "us") do
+    labels.with_locale("nope-still-nope") do
+      labels.with_locale("en-us") do
         expect(labels.get_label("label")).to eq "label in american english"
       end
     end
@@ -76,17 +76,17 @@ Spectator.describe "Label loader" do
 
   it "static methods support setting language and locale context" do
     CrI18n.load_labels("./spec/spec1")
-    CrI18n.with_language("en") do
+    CrI18n.with_locale("en") do
       expect(CrI18n.get_label("label")).to eq "label in english"
     end
 
-    CrI18n.with_language_and_locale("en", "us") do
+    CrI18n.with_locale("en-us") do
       expect(CrI18n.get_label("label")).to eq "label in american english"
     end
 
     # and nesting
-    CrI18n.with_language_and_locale("nope", "still-nope") do
-      CrI18n.with_language_and_locale("en", "us") do
+    CrI18n.with_locale("nope-still-nope") do
+      CrI18n.with_locale("en-US") do
         expect(CrI18n.get_label("label")).to eq "label in american english"
       end
     end

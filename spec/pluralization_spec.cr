@@ -28,10 +28,10 @@ Spectator.describe "Pluralization" do
   it "Pluralizes" do
     CrI18n.load_labels("./spec/plural_spec")
 
-    expect(CrI18n.get_label("label", "en", "sure", count: 1)).to eq "Yeah sure"
-    expect(CrI18n.get_label("label", "en", "sure", count: 10)).to eq "Way more sures here"
-    expect(label("label", "en", "sure", count: 1)).to eq "Yeah sure"
-    expect(label("label", "en", "sure", count: 10)).to eq "Way more sures here"
+    expect(CrI18n.get_label("label", "en-sure", count: 1)).to eq "Yeah sure"
+    expect(CrI18n.get_label("label", "en-sure", count: 10)).to eq "Way more sures here"
+    expect(label("label", "en-sure", count: 1)).to eq "Yeah sure"
+    expect(label("label", "en-sure", count: 10)).to eq "Way more sures here"
 
     expect(CrI18n.get_label("label", "en", count: 1)).to eq "singular"
     expect(CrI18n.get_label("label", "en", count: 2)).to eq "two of 'em"
