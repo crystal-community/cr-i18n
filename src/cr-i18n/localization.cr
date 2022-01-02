@@ -4,6 +4,7 @@ module CrI18n
   # LABEL_DIRECTORY will be a list of one (but we can modify this constant during compile time now)
   LABEL_DIRECTORY = [] of String
   DEFINED_LABELS  = [] of String
+  PLURAL_LABELS   = [] of String
 
   def self.get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)
     @@instance.get_label(target, lang_locale, count, **splat)
@@ -19,6 +20,22 @@ module CrI18n
 
   def self.raise_if_missing=(value : Bool)
     @@instance.raise_if_missing = value
+  end
+
+  def self.root_locale
+    @@instance.root_locale
+  end
+
+  def self.root_locale=(value : String)
+    @@instance.root_locale = value
+  end
+
+  def self.root_pluralization
+    @@instance.root_pluralization
+  end
+
+  def self.root_pluralization=(value : String)
+    @@instance.root_pluralization = value
   end
 
   def self.parse_locale(lang_locale : String)
@@ -71,6 +88,8 @@ module CrI18n
 
   class Labels
     property raise_if_missing = false
+    property root_locale = ""
+    property root_pluralization = ""
 
     @root_labels = {} of String => String
     @language_labels = Hash(String, Hash(String, String)).new { |h, k| h[k] = {} of String => String }
@@ -104,6 +123,8 @@ module CrI18n
     end
 
     def get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)
+      raise "Label #{target} isn't pluralized, but is using the 'count' (#{count}) param" if count && raise_if_missing && !PLURAL_LABELS.includes?(target)
+
       language, locale = CrI18n.parse_locale(lang_locale)
       if language.empty? && @contexts.size > 0
         curr_context = @contexts[Fiber.current.object_id][-1]
@@ -113,10 +134,22 @@ module CrI18n
         end
       end
 
+      language, locale = CrI18n.parse_locale(root_locale) if language.empty? && locale.empty?
+
       label = target
       if count
+        raise "Unable to pluralize '#{label}': no language or locale detected, and root_pluralization locale has not been set" if language.empty? && locale.empty? && root_pluralization.empty?
         if plural = Pluralization.pluralize(count, language, locale)
           plural_label = "#{label}.#{plural}"
+        elsif root_pluralization
+          tlang, tlocale = CrI18n.parse_locale(root_pluralization)
+          if plural = Pluralization.pluralize(count, tlang, tlocale)
+            plural_label = "#{label}.#{plural}"
+          else
+            raise_unpluralizable_error(label, language, locale)
+          end
+        else
+          raise_unpluralizable_error(label, language, locale)
         end
       end
 
@@ -124,13 +157,22 @@ module CrI18n
         ret = get_label?(plural_label, language, locale) || get_label?(label, language, locale) || label
       else
         ret = get_label?(label, language, locale) || label
-        raise "Label #{label} not found" if label == target && raise_if_missing
       end
+
+      raise "Label #{label} not found" if label == ret && raise_if_missing
 
       splat.each_with_index do |name, val|
         ret = ret.gsub("%{#{name}}", val)
       end
       ret
+    end
+
+    private def raise_unpluralizable_error(label, language, locale)
+      errors = [] of String
+      errors << "Unable to pluralize #{label}: "
+      errors << "No pluralization rules for detected locale '#{language}#{locale.empty? ? "" : "-" + locale}'" if !language.empty?
+      errors << "No pluralization rules for root_pluralization #{root_pluralization}" if !root_pluralization.empty?
+      raise errors.join
     end
 
     private def get_label?(target : String, language : String, locale : String)

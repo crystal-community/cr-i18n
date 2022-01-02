@@ -92,17 +92,20 @@ Spectator.describe "Label loader" do
     end
   end
 
-  it "pluralizes labels" do
-    CrI18n::Pluralization.auto_register_rules
-  end
-
   context "with compiler checking" do
     it "has the compiler check labels" do
+      # This test doesn't run anything normally, but can be used to test the various compiler checks by uncommenting the lines below
+      # and running specs with the '-Denforce_labels' compiler flag
+
       CrI18n.compiler_load_labels("./spec/plural_spec")
-      # Will throw an error at compile time when the -Denforce_labels is specified
+      CrI18n::Pluralization.auto_register_rules
+      CrI18n.root_pluralization = "en"
+
+      # TEST: Check that non-existent labels throw compiler errors
       # expect(label(does.not.exist)).to eq "does.not.exist"
-      # expect(label(label, count: 1)).to eq "label"
-      # TODO: test pluralization with compiler checks
+
+      # TEST: Check that if a 'count' param is specified, that the label must be plural
+      # expect(label(nonplural_label, count: 1)).to eq "nonplural_label"
     end
   end
 end

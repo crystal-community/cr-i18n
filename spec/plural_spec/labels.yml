@@ -1,1 +1,7 @@
-label: There's a label here
+label:
+  one: There's a label here
+  two: The other two
+  other: No idea what this is
+new_label:
+  other: The other one
+nonplural_label: This is not plural

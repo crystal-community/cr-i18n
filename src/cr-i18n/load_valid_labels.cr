@@ -11,7 +11,18 @@ module CrI18n
   end
 end
 
-labels = CrI18n.load_labels(directory)
+# Plural rules from https://cldr.unicode.org/index/cldr-spec/plural-rules
+plural_endings = {"zero", "one", "two", "few", "many", "other"}
 
-puts "[#{labels.root_labels.keys}]"
-# puts labels.root_labels.keys
+plural_labels = [] of String
+
+labels = CrI18n.load_labels(directory).root_labels.keys
+
+labels.each_with_index do |target, i|
+  if plural_endings.includes?(target.split('.')[-1])
+    labels[i] = target.rpartition('.')[0]
+    plural_labels << labels[i]
+  end
+end
+
+puts "[#{labels} of String, #{plural_labels} of String]"
