@@ -7,22 +7,16 @@ directory = ARGV[0]
 
 module CrI18n
   class Labels
-    getter root_labels, language_labels, locale_labels
+    getter root_labels, plural_labels
   end
 end
 
-# Plural rules from https://cldr.unicode.org/index/cldr-spec/plural-rules
-plural_endings = {"zero", "one", "two", "few", "many", "other"}
+labels = CrI18n.load_labels(directory)
 
-plural_labels = [] of String
+non_plural = Set(String).new
 
-labels = CrI18n.load_labels(directory).root_labels.keys
-
-labels.each_with_index do |target, i|
-  if plural_endings.includes?(target.split('.')[-1])
-    labels[i] = target.rpartition('.')[0]
-    plural_labels << labels[i]
-  end
+labels.root_labels.keys.each do |label|
+  non_plural << label unless labels.plural_labels.includes?(label.rpartition('.')[0])
 end
 
-puts "[#{labels} of String, #{plural_labels} of String]"
+puts "[#{non_plural.to_a} of String, #{labels.plural_labels.to_a} of String, #{labels.label_discrepencies} of String]"

@@ -1,22 +1,28 @@
 module CrI18n
   macro compiler_load_labels(directory)
   {% begin %}
-    CrI18n.load_labels("{{directory.id}}")
+    {% raise "Compiler has already loaded labels from #{CrI18n::COMPILER_LOADED[0]}, and is now trying to load labels again from #{directory.filename.id}:#{directory.line_number}" unless CrI18n::COMPILER_LOADED.empty? %}
     {% CrI18n::LABEL_DIRECTORY.clear %}
     {% CrI18n::LABEL_DIRECTORY << directory %}
     {% CrI18n::DEFINED_LABELS.clear %}
     \{% {{run("./load_valid_labels", directory)}}.each_with_index do |labels, i|
       labels.each { |l| CrI18n::DEFINED_LABELS << l } if i == 0
       labels.each { |l| CrI18n::PLURAL_LABELS << l } if i == 1
+      raise "#{labels.join("\n")}" if i == 2 && flag?(:enforce_label_parity)
     end
     %}
+    {% CrI18n::COMPILER_LOADED.clear %}
+    # Record where we loaded labels from for the compiler
+    {% CrI18n::COMPILER_LOADED << "#{directory.filename.id}:#{directory.line_number}" %}
+    # And then officially load the labels, letting the returned labels be the returned object
+    CrI18n.load_labels("{{directory.id}}")
   {% end %}
   end
 end
 
 macro label(target, lang_locale = "", count = nil, **splat)
   {% if flag?(:enforce_labels) %}
-    {% if !CrI18n::DEFINED_LABELS.empty? && !target.is_a?(StringInterpolation) && !CrI18n::DEFINED_LABELS.includes?("#{target.id}") %}
+    {% if !CrI18n::DEFINED_LABELS.empty? && !target.is_a?(StringInterpolation) && count == nil && !CrI18n::DEFINED_LABELS.includes?("#{target.id}") %}
       {% raise "Missing label '#{target.id}' at #{target.filename.id}:#{target.line_number}, could not be found from #{CrI18n::LABEL_DIRECTORY[0]}" %}
     {% elsif count != nil && !CrI18n::PLURAL_LABELS.includes?("#{target.id}") %}
       {% raise "Label #{target.id} includes a count value '#{count}' but isn't pluralized in the root label file" %}

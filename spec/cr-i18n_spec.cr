@@ -101,6 +101,9 @@ Spectator.describe "Label loader" do
       CrI18n::Pluralization.auto_register_rules
       CrI18n.root_pluralization = "en"
 
+      # TEST: compiler should only allow a single 'compiler_load_labels' macro to run
+      # CrI18n.compiler_load_labels("./spec/plural_spec")
+
       # TEST: Check that non-existent labels throw compiler errors
       # expect(label(does.not.exist)).to eq "does.not.exist"
 

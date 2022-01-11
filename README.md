@@ -5,7 +5,7 @@ This shards aims to provide a simple interface for obtaining the correct label o
 This shard does not translate anything, only organizes any labels from multiple languages and locales, so obtaining the correct label
 is more streamlined.
 
-Lots of inspiration is taken from [crystal-i18n/i18n](https://crystal-i18n.github.io/) as well as (BrucePerens/internationalize)[https://github.com/BrucePerens/internationalize].
+Lots of inspiration is taken from [crystal-i18n/i18n](https://crystal-i18n.github.io/) as well as [BrucePerens/internationalize](https://github.com/BrucePerens/internationalize).
 
 ## Installation
 
@@ -37,15 +37,24 @@ And each file has the contents:
 ```
 > cat labels/root.yml
 label: this is the fallback label, in case there's not a language or locale version of this.
+plural_label:
+  one: label representing a singular thing
+  other: label representing multiple things
 section:
   other_label: this is a nested label
   yet_another_label: labels can be grouped this way
 
 > cat labels/en/en.yml
 label: this is the english version of the label
+plural_label:
+  one: a single english thing
+  other: multiple english things
 
 > cat labels/en/us/us.yml
 label: this is the american english version of the label
+plural_label:
+  one: a single american thing
+  other: multiple american things
 ```
 
 NOTE: File names don't matter, nor do all labels need to be in the same file. _All label files in the same directory will be read and combined for that language and locale_. Directory names
@@ -65,6 +74,20 @@ my_labels = CrI18n.compiler_load_labels("labels")
 
 # Initializing method two - configured or interpolated path
 my_labels = CrI18n.load_labels("labels")
+```
+
+### Configuring Root Behavior
+
+When a language / locale isn't specified anywhere, a "root" locale can be configured as the fallback. However, if you don't want to set a root locale as a global fallback (instead preferring the label lookup to fail, as this means you found some code that erroneously doesn't have a locale set), you'll still want to set a root "pluralization" locale to help determine how plural rules should be run for the root labels. Pluralization is explained father below.
+
+```crystal
+# Either through the static method or through the label instance you have
+CrI18n.root_locale = "en-us"
+my_labels.root_locale = "en-us"
+
+# And for setting the pluralization rules only
+CrI18n.root_pluralization = "en-us"
+my_labels.root_pluralization = "en-us"
 ```
 
 ### Retrieving Labels
@@ -99,6 +122,62 @@ CrI18n.get_label("label", "en-us") # => "this is the american english version of
 label("label", "en") # ...
 label("label", "en-us") # ...
 ```
+
+### Pluralization
+
+When a label retreival includes a `count` parameter, it is assumed to be pluralizable (having multiple labels depending on the number of the _things_ there are). Pluralization largely follows the rules of (this page)[https://cldr.unicode.org/index/cldr-spec/plural-rules], but are also explained below. The gist of the behavior is, using the example labels from above:
+
+```crystal
+label("plural_label", count: 1) # => "a single american thing" (if locale is "en-us")
+label("plural_label", count: 2) # => "multiple american things" (if locale is "en-us")
+```
+
+Different plural tags that are supported are:
+
+* zero
+* one
+* two
+* few
+* many
+* other
+
+Where the "other" is a required term and a catch all for when the other plural tags don't apply. Different locales can define different pluralization rules (explained in next section) that will translate a given `count` value into a plural tag, and the plural tag will be used during label lookup. If a plural tag is returned that doesn't exist in a label file, then it will be treated as a missing label (however, due to not knowing which plural rules or which locales are supported at compile time, these can't be checked by the compiler).
+
+#### Defining Plural Rules
+
+Plural rules extend the `CrI18n::Pluralization::PluralRule` class and define the `apply` method. If automatic locale registration is desired, you also need to define the `for_locale` method to provide a list of locales the plural rule should apply for.
+
+```crystal
+class MyPluralRule < CrI18n::Pluralization::PluralRule
+  def for_locale : String
+    ["en", "en-us", "en-uk"]
+  end
+
+  def apply(count : Float | Int) : String
+    case count
+    when 1 then "one"
+    else "other"
+    end
+  end
+end
+```
+
+Pluralization rules can be registered explicitly or automatically, depending on if you want more control over which locales are supported or not.
+
+Explicitly:
+```crystal
+CrI18n::Pluralization.register_locale("en-us", MyPluralRule.new)
+```
+
+Automatically:
+```crystal
+# This will detect any class extending the PluralRule class, and all rules _must_ provide a for_locale implementation that provides at least one locale
+CrI18n::Pluralization.auto_register_rules
+
+# This will create an instance of the MyPluralRule and use it for the en-us and en-uk locales, as well as the en language
+```
+
+NOTE: Only one plural rule per language / locale is supported. Trying to register multiple rules for the same locale will cause an error.
 
 ### Looking For Missing Labels
 

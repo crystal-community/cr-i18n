@@ -1,9 +1,7 @@
 require "./spec_helper"
 
 class TestEnglishSurePluralRule < CrI18n::Pluralization::PluralRule
-  def for_locale : String
-    "en-sure"
-  end
+  LOCALES = ["en-sure"]
 
   def apply(count : Float | Int) : String
     count == 1 ? "one" : "other"
@@ -11,9 +9,7 @@ class TestEnglishSurePluralRule < CrI18n::Pluralization::PluralRule
 end
 
 class TestEnglishPluralRule < CrI18n::Pluralization::PluralRule
-  def for_locale : Array(String)
-    ["en", "en-us"]
-  end
+  LOCALES = ["en", "en-us"]
 
   def apply(count : Float | Int) : String
     case count
@@ -47,6 +43,19 @@ Spectator.describe "Pluralization" do
     expect(CrI18n.get_label("new_label", count: 3)).to eq "The other one"
     expect(label("label", count: 3)).to eq "way too many"
     expect(label("new_label", count: 3)).to eq "The other one"
+  end
+
+  it "raises if count is used with a non-plural label" do
+    CrI18n.load_labels("./spec/plural_spec")
+    CrI18n.root_locale = "en"
+
+    expect(CrI18n.get_label("nonplural_label", count: 1)).to eq "This is not plural"
+
+    CrI18n.raise_if_missing = true
+
+    expect_raises(Exception, /Label nonplural_label isn't pluralized.*/) do
+      CrI18n.get_label("nonplural_label", count: 1)
+    end
   end
 
   it "Pluralizes and falls back to language" do
