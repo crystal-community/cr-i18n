@@ -2,13 +2,14 @@ module CrI18n
   macro compiler_load_labels(directory)
   {% begin %}
     {% raise "Compiler has already loaded labels from #{CrI18n::COMPILER_LOADED[0]}, and is now trying to load labels again from #{directory.filename.id}:#{directory.line_number}" unless CrI18n::COMPILER_LOADED.empty? %}
-    {% CrI18n::LABEL_DIRECTORY.clear %}
     {% CrI18n::LABEL_DIRECTORY << directory %}
-    {% CrI18n::DEFINED_LABELS.clear %}
-    \{% {{run("./load_valid_labels", directory)}}.each_with_index do |labels, i|
-      labels.each { |l| CrI18n::DEFINED_LABELS << l } if i == 0
-      labels.each { |l| CrI18n::PLURAL_LABELS << l } if i == 1
-      raise "#{labels.join("\n")}" if i == 2 && flag?(:enforce_label_parity)
+    \{% {{run("./load_valid_labels", directory, Pluralization::PluralRule.subclasses.map { |s| s.constant("LOCALES").join(",") }.select { |s| s.size > 0 }.join(","))}}.each_with_index do |labels, i|
+      next if i == 0 && (flag?(:enforce_labels) || flag?(:enforce_label_parity))
+      next if i == 1 && (flag?(:enforce_label_parity))
+      raise "Found locales or languages that don't have plural rules: #{labels}. Current plural rules support these languages and locales: #{CrI18n::Pluralization::PluralRule.subclasses.map { |s| s.constant("LOCALES").join(",") }.select { |s| s.size > 0 }.join(", ").id}" if labels.size > 0 && i == 0
+      raise "Found label discrepencies:\n#{labels.join("\n").id}" if labels.size > 0 && i == 1
+      labels.each { |l| CrI18n::DEFINED_LABELS << l } if i == 2
+      labels.each { |l| CrI18n::PLURAL_LABELS << l } if i == 3
     end
     %}
     {% CrI18n::COMPILER_LOADED.clear %}

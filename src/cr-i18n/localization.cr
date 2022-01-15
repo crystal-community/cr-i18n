@@ -2,10 +2,11 @@ module CrI18n
   @@instance = Labels.new
 
   # LABEL_DIRECTORY will be a list of one (but we can modify this constant during compile time now)
-  LABEL_DIRECTORY = [] of String
-  COMPILER_LOADED = [] of String
-  DEFINED_LABELS  = [] of String
-  PLURAL_LABELS   = [] of String
+  LABEL_DIRECTORY   = [] of String
+  COMPILER_LOADED   = [] of String
+  DEFINED_LABELS    = [] of String
+  PLURAL_LABELS     = [] of String
+  SUPPORTED_LOCALES = [] of String
 
   def self.get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)
     @@instance.get_label(target, lang_locale, count, **splat)
@@ -66,12 +67,12 @@ module CrI18n
         Dir.each_child("#{root}/#{lang_or_file}") do |locale_or_file|
           if File.file?("#{root}/#{lang_or_file}/#{locale_or_file}") && supported?(locale_or_file)
             lang_labels = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}").read
-            labels.add_language(lang_labels, lang_or_file)
+            labels.add_language(lang_labels, lang_or_file.downcase)
           elsif File.directory?("#{root}/#{lang_or_file}/#{locale_or_file}")
             Dir.each_child("#{root}/#{lang_or_file}/#{locale_or_file}") do |locale_file|
               if File.file?("#{root}/#{lang_or_file}/#{locale_or_file}/#{locale_file}") && supported?(locale_file)
                 locale_labels = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}/#{locale_file}").read
-                labels.add_locale(locale_labels, lang_or_file, locale_or_file)
+                labels.add_locale(locale_labels, lang_or_file.downcase, locale_or_file.downcase)
               end
             end
           end
