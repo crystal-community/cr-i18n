@@ -68,4 +68,19 @@ Spectator.describe "Pluralization" do
     expect(CrI18n.get_label("label", "en-uk", count: 2)).to eq "two of 'em"
     expect(CrI18n.get_label("label", "es-uk", count: 5)).to eq "No idea what this is"
   end
+
+  it "rules all can run" do
+    CrI18n.load_labels("./spec/plural_spec")
+    CrI18n.root_pluralization = "en-us"
+    CrI18n::Pluralization.auto_register_rules
+
+    CrI18n::Pluralization.supported_locales.each do |locale|
+      if locale.count("-") == 1
+        lang, loc = locale.split("-")
+        expect(CrI18n::Pluralization.pluralize(1, lang, loc)).to_not be_nil
+      else
+        expect(CrI18n::Pluralization.pluralize(1, locale, "")).to_not be_nil
+      end
+    end
+  end
 end

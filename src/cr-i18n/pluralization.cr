@@ -11,6 +11,10 @@ module CrI18n
 
     @@locale_rules = {} of String => PluralRule
 
+    def self.supported_locales
+      @@locale_rules.keys
+    end
+
     def self.register_locale(locale : String, rule : PluralRule)
       raise "Duplicate rules being registered for #{locale.downcase}: #{rule.class} and #{@@locale_rules[locale.downcase].class}" if @@locale_rules.includes?(locale.downcase)
       @@locale_rules[locale.downcase] = rule
