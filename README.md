@@ -141,7 +141,7 @@ Different plural tags that are supported are:
 * many
 * other
 
-Where the "other" is a required term and a catch all for when the other plural tags don't apply. Different locales can define different pluralization rules (explained in next section) that will translate a given `count` value into a plural tag, and the plural tag will be used during label lookup. If a plural tag is returned that doesn't exist in a label file, then it will be treated as a missing label (however, due to not knowing which plural rules or which locales are supported at compile time, these can't be checked by the compiler).
+Where the "other" is a required term and a catch all for when the other plural tags don't apply. Different locales can define different pluralization rules (explained in next section) that will translate a given `count` value into a plural tag, and the plural tag will be used during label lookup. If a plural tag is returned that doesn't exist in a label file, then it will be treated as a missing label.
 
 #### Defining Plural Rules
 
@@ -149,9 +149,9 @@ Plural rules extend the `CrI18n::Pluralization::PluralRule` class and define the
 
 ```crystal
 class MyPluralRule < CrI18n::Pluralization::PluralRule
-  def for_locale : String
-    ["en", "en-us", "en-uk"]
-  end
+  # Important: The LOCALES constant is what the `Pluralization.auto_register_rules` method described below uses for
+  # attaching plural rules to a list of locales it supports
+  LOCALES = ["en", "en-us", "en-uk"]
 
   def apply(count : Float | Int) : String
     case count
@@ -171,7 +171,8 @@ CrI18n::Pluralization.register_locale("en-us", MyPluralRule.new)
 
 Automatically:
 ```crystal
-# This will detect any class extending the PluralRule class, and all rules _must_ provide a for_locale implementation that provides at least one locale
+# This will detect any class extending the PluralRule class, and all rules _must_ provide
+# a `LOCALES` constant providing an array of strings of the supported locales (see above)
 CrI18n::Pluralization.auto_register_rules
 
 # This will create an instance of the MyPluralRule and use it for the en-us and en-uk locales, as well as the en language
@@ -215,6 +216,34 @@ my_label.get_label("nope") # => Exception thrown
 CrI18n.raise_if_missing = true
 label("this doesn't exist") # => Compiler error if -Denforce_labels, or runtime error otherwise
 ```
+
+### Looking for Missing Labels in Language or Locale Labels
+After translation has occurred, it's good to do a final check that there is parity between all label files. To that end, `cr-i18n` can leverage the compiler to make that check, or as a runtime check yourself. To make it a compiler check, compile with the `-Denforce_label_parity` flag, and be sure to initialize the labels using the `compiler_load_labels` method described above. A full example can be seen as:
+
+```crystal
+# When compiling with the -Denforce_label_parity flag
+CrI18n.compiler_load_labels("my_label_directory") # Compiler error unless full label parity is found
+
+# As a runtime check
+labels = CrI18n.load_labels("my_label_directory")
+labels.load_discrepencies # => Array of errors if there are problems, or an empty array otherwise
+```
+
+Things that are checked for parity:
+* Non-plural labels found in the root labels are present in all language and locale labels
+* Plural labels found in the root labels are present in all language and locale labels
+* All plural labels have the "other" plural tag defined
+* Labels _not_ present in the root labels but found in language or locale labels are flagged
+
+## Developing Recommendations
+
+When using this shard to develop, it's recommended that the developer use the `label("my actual label string here")` macro with their anticipated strings verbatim. This will provide the least amount of friction between development and needing to change things on the fly.
+
+Once the feature is mostly finished and ready for finalization, the developer can start compiling with the `-Denforce_labels` flag to discover where all of these labels are. For every compiler error that shows up, the developer moves the string to the appropriate _root_ label file and defines an appropriate target path for it, and then replaces the text in the `label` macro with that path.
+
+CI/CD would be an appropriate place to always run with the `-Denforce_labels` flag.
+
+At some point later, after all labels in the _root_ labels have been translated for all supported locales and the directory structure set up accordingly, rebuilding with the `-Denforce_label_parity` can act as a final check that all labels look and behave accordingly.
 
 ### Testing with Labels
 
