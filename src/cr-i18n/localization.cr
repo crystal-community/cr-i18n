@@ -138,7 +138,7 @@ module CrI18n
       _, non_plural = detect_plural(@root_labels)
 
       @plural_labels.each do |target|
-        unless @root_labels.includes?("#{target}.other")
+        unless @root_labels.has_key?("#{target}.other")
           discs << "Plural label '#{target}' is missing the required 'other' plural tag in root labels"
         end
       end
@@ -147,7 +147,7 @@ module CrI18n
         lang_plural, lang_non_plural = detect_plural(labels)
 
         lang_plural.each do |target|
-          unless @language_labels[lang].includes?("#{target}.other")
+          unless @language_labels[lang].has_key?("#{target}.other")
             discs << "Language '#{lang}' with plural label '#{target}' is missing the required 'other' plural tag"
           end
         end
@@ -176,7 +176,7 @@ module CrI18n
           locale_plural, locale_non_plural = detect_plural(labels)
 
           locale_plural.each do |target|
-            unless @locale_labels[lang][locale].includes?("#{target}.other")
+            unless @locale_labels[lang][locale].has_key?("#{target}.other")
               discs << "Locale '#{lang}-#{locale}' with plural label '#{target}' is missing the required 'other' plural tag"
             end
           end

@@ -4,10 +4,10 @@ module CrI18n
     {% raise "Compiler has already loaded labels from #{CrI18n::COMPILER_LOADED[0]}, and is now trying to load labels again from #{directory.filename.id}:#{directory.line_number}" unless CrI18n::COMPILER_LOADED.empty? %}
     {% CrI18n::LABEL_DIRECTORY << directory %}
     \{% {{run("./load_valid_labels", directory, Pluralization::PluralRule.subclasses.map { |s| s.constant("LOCALES").join(",") }.select { |s| s.size > 0 }.join(","))}}.each_with_index do |labels, i|
-      next if i == 0 && (flag?(:enforce_labels) || flag?(:enforce_label_parity))
-      next if i == 1 && (flag?(:enforce_label_parity))
-      raise "Found locales or languages that don't have plural rules: #{labels}. Current plural rules support these languages and locales: #{CrI18n::Pluralization::PluralRule.subclasses.map { |s| s.constant("LOCALES").join(",") }.select { |s| s.size > 0 }.join(", ").id}" if labels.size > 0 && i == 0
-      raise "Found label discrepencies:\n#{labels.join("\n").id}" if labels.size > 0 && i == 1
+      # Poor man's flatten in macros when macros don't support `flatten`
+      valid_locales = CrI18n::Pluralization::PluralRule.subclasses.map { |m| m.constant("LOCALES").join(",") }.join(",").split(",").sort.join(", ")
+      raise "Found locales or languages that don't have plural rules: #{labels.sort.join(", ").id}. Current plural rules support these languages and locales: #{valid_locales.id}" if labels.size > 0 && i == 0 && (flag?(:enforce_labels) || flag?(:enforce_label_parity))
+      raise "Found label discrepencies:\n#{labels.join("\n").id}" if labels.size > 0 && i == 1 && flag?(:enforce_label_parity)
       labels.each { |l| CrI18n::DEFINED_LABELS << l } if i == 2
       labels.each { |l| CrI18n::PLURAL_LABELS << l } if i == 3
     end

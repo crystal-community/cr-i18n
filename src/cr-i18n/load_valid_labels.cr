@@ -4,7 +4,7 @@ require "yaml"
 require "./localization"
 
 directory = ARGV[0]
-pluralized_locales = ARGV[1].split(",")
+pluralized_locales = ARGV[1].split(/\s*,\s*/)
 
 module CrI18n
   class Labels

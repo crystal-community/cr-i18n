@@ -1,0 +1,7 @@
+nonplural_label: exists
+extra_label: oops
+plural_label:
+  one: yes string
+  other: no string
+invalid_plural:
+  one: yes string

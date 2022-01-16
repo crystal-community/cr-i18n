@@ -97,12 +97,12 @@ Spectator.describe "Label loader" do
       # This test doesn't run anything normally, but can be used to test the various compiler checks by uncommenting the lines below
       # and running specs with the '-Denforce_labels' compiler flag
 
-      # CrI18n.compiler_load_labels("./spec/plural_spec")
+      # CrI18n.compiler_load_labels("./spec/compiler_spec")
       # CrI18n::Pluralization.auto_register_rules
       # CrI18n.root_pluralization = "en"
 
       # TEST: compiler should only allow a single 'compiler_load_labels' macro to run
-      # CrI18n.compiler_load_labels("./spec/plural_spec")
+      # CrI18n.compiler_load_labels("./spec/compiler_spec")
 
       # TEST: Check that non-existent labels throw compiler errors
       # expect(label(does.not.exist)).to eq "does.not.exist"
@@ -112,3 +112,13 @@ Spectator.describe "Label loader" do
     end
   end
 end
+
+# Uncomment this class when testing the compiler test above
+# class CompilerRule < CrI18n::Pluralization::PluralRule
+#   LOCALES = ["es", "en-nope", "es-mx"]
+
+#   def apply(count : Int | Float) : String
+#     # NO-op
+#     "other"
+#   end
+# end
