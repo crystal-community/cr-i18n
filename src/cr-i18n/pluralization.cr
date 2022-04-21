@@ -16,8 +16,8 @@ module CrI18n
     end
 
     def self.register_locale(locale : String, rule : PluralRule)
-      raise "Duplicate rules being registered for #{locale.downcase}: #{rule.class} and #{@@locale_rules[locale.downcase].class}" if @@locale_rules.includes?(locale.downcase)
-      @@locale_rules[locale.downcase] = rule
+      raise "Duplicate rules being registered for #{locale}: #{rule.class} and #{@@locale_rules[locale].class}" if @@locale_rules.includes?(locale)
+      @@locale_rules[locale] = rule
     end
 
     def self.auto_register_rules

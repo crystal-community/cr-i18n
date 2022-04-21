@@ -47,7 +47,7 @@ module CrI18n
       lang = lang_locale
     end
 
-    [lang.downcase, locale ? locale.downcase : ""]
+    [lang, locale || ""]
   end
 
   def self.with_locale(lang_locale : String, &)
@@ -71,12 +71,12 @@ module CrI18n
         Dir.each_child("#{root}/#{lang_or_file}") do |locale_or_file|
           if File.file?("#{root}/#{lang_or_file}/#{locale_or_file}") && supported?(locale_or_file)
             lang_labels = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}").read
-            labels.add_language(lang_labels, lang_or_file.downcase)
+            labels.add_language(lang_labels, lang_or_file)
           elsif File.directory?("#{root}/#{lang_or_file}/#{locale_or_file}")
             Dir.each_child("#{root}/#{lang_or_file}/#{locale_or_file}") do |locale_file|
               if File.file?("#{root}/#{lang_or_file}/#{locale_or_file}/#{locale_file}") && supported?(locale_file)
                 locale_labels = LabelLoader.new("#{root}/#{lang_or_file}/#{locale_or_file}/#{locale_file}").read
-                labels.add_locale(locale_labels, lang_or_file.downcase, locale_or_file.downcase)
+                labels.add_locale(locale_labels, lang_or_file, locale_or_file)
               end
             end
           end

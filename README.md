@@ -249,7 +249,7 @@ CI/CD would be an appropriate place to always run with the `-Denforce_labels` fl
 At some point later, after all labels in the _root_ labels have been translated for all supported locales and the directory structure set up accordingly, rebuilding with the `-Denforce_label_parity` can act as a final check that all labels look and behave accordingly.
 
 Also, instead of hardcoding which locales your program supports and can be used, you can get a list of all languages and locales loaded by calling
-`CrI18n.supported_locales` or `my_labels_object.supported_locales` to receive an array of strings denoting each language and locale (downcased).
+`CrI18n.supported_locales` or `my_labels_object.supported_locales` to receive an array of strings denoting each language and locale.
 
 ### Testing with Labels
 
