@@ -92,11 +92,18 @@ Spectator.describe "Label loader" do
     end
   end
 
+  it "provides the supported locales" do
+    CrI18n.load_labels("./spec/spec1")
+
+    expect(CrI18n.supported_locales).to eq ["en", "en-us"]
+  end
+
   context "with compiler checking" do
     it "has the compiler check labels" do
       # This test doesn't run anything normally, but can be used to test the various compiler checks by uncommenting the lines below
       # and running specs with the '-Denforce_labels' compiler flag
 
+      # FIRST: Uncomment these lines, then uncomment a TEST line and run specs with -Denforce_labels
       # CrI18n.compiler_load_labels("./spec/compiler_spec")
       # CrI18n::Pluralization.auto_register_rules
       # CrI18n.root_pluralization = "en"

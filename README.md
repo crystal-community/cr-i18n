@@ -92,7 +92,8 @@ my_labels.root_pluralization = "en-us"
 
 ### Retrieving Labels
 
-Labels follow a hierarchy, with language-locale being the first to be checked, followed by language only, and finally using the root (top level) label files for finding a label value.
+Labels follow a hierarchy, with language-locale being the first to be checked, followed by language only, and finally using the root (top level) label files for finding a label value. If the root should not be used for label retreival (e.g. in production or you otherwise don't trust the root labels'
+quality), you can set `CrI18n.resolve_to_root = false`, and these labels will be treated as missing.
 
 ```crystal
 # To get the benefits of compiler checking, use the new top level `label` macro. This delegates to `CrI18n.get_label` as described below
@@ -100,6 +101,8 @@ label("label") # => "this is the fallback label, in case there's not a language 
 
 # Getting a label without a language or locale specified (root)
 my_labels.get_label("label") # => "this is the fallback label, in case there's not a language or locale version of this"
+my_labels.resolve_to_root = false
+my_labels.get_label("label") # => "label", or raised exception if raise_if_missing is true (see below)
 
 # Getting a label for a language
 my_labels.get_label("label", "en") # => "this is the english version of the label"
@@ -182,7 +185,7 @@ NOTE: Only one plural rule per language / locale is supported. Trying to registe
 
 ### Looking For Missing Labels
 
-After developingy, you may have put in dummy labels in place just to get things working. To now find all those locations so you can remove the dummy values and put them in label files, you have a few options, depending on how you initialized above.
+After developing, you may have put in dummy labels in place just to get things working. To now find all those locations so you can remove the dummy values and put them in label files, you have a few options, depending on how you initialized above.
 
 * Use the compiler flag `-Denforce_labels` to trigger compiler enforcements for all usages of the `label` macro
 * Use `CrI18n.raise_if_missing = true` or `my_labels.raise_if_missing = true` to trigger runtime exceptions instead
@@ -244,6 +247,9 @@ Once the feature is mostly finished and ready for finalization, the developer ca
 CI/CD would be an appropriate place to always run with the `-Denforce_labels` flag.
 
 At some point later, after all labels in the _root_ labels have been translated for all supported locales and the directory structure set up accordingly, rebuilding with the `-Denforce_label_parity` can act as a final check that all labels look and behave accordingly.
+
+Also, instead of hardcoding which locales your program supports and can be used, you can get a list of all languages and locales loaded by calling
+`CrI18n.supported_locales` or `my_labels_object.supported_locales` to receive an array of strings denoting each language and locale (downcased).
 
 ### Testing with Labels
 

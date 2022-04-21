@@ -56,6 +56,10 @@ module CrI18n
     end
   end
 
+  def self.supported_locales
+    @@instance.supported_locales
+  end
+
   def self.load_labels(root : String)
     raise "Label directory '#{root}' doesn't exist" unless Dir.exists?("#{root}")
     labels = Labels.new
@@ -96,6 +100,8 @@ module CrI18n
     property raise_if_missing = false
     property root_locale = ""
     property root_pluralization = ""
+    property resolve_to_root = true
+    getter supported_locales
 
     @root_labels = {} of String => String
     @language_labels = Hash(String, Hash(String, String)).new { |h, k| h[k] = {} of String => String }
@@ -108,6 +114,8 @@ module CrI18n
     @plural_labels = Set(String).new
     @frozen = false
     @discrepencies : Array(String)?
+
+    @supported_locales = [] of String
 
     def add_root(labels : Hash(String, String))
       raise "Can't add root labels, already finalized" if @frozen
@@ -127,6 +135,7 @@ module CrI18n
     def freeze
       raise "Already finalized" if @frozen
       @plural_labels, _ = detect_plural(@root_labels)
+      calc_supported_locales
       @frozen = true
     end
 
@@ -276,9 +285,14 @@ module CrI18n
       elsif l = @language_labels.dig?(language, target)
         @logger.debug { "Successfully resolved \"#{target}\" with language #{language} to \"#{l}\"" }
         return l
-      elsif l = @root_labels[target]?
-        @logger.debug { "Successfully resolved \"#{target}\" from root to \"#{l}\"" }
-        return l
+      elsif resolve_to_root
+        if l = @root_labels[target]?
+          @logger.debug { "Successfully resolved \"#{target}\" from root to \"#{l}\"" }
+          return l
+        else
+          @logger.warn { "No label found for #{target}" }
+          @missed << target
+        end
       else
         @logger.warn { "No label found for #{target}" }
         @missed << target
@@ -295,6 +309,19 @@ module CrI18n
         PLURAL_ENDINGS.includes?(plural_tag) ? plural << label : non_plural << target
       end
       [plural, non_plural]
+    end
+
+    private def calc_supported_locales
+      @supported_locales.clear
+
+      @language_labels.keys.each { |lang| @supported_locales << lang }
+      @locale_labels.each do |lang, locales|
+        locales.keys.each do |locale|
+          @supported_locales << "#{lang}-#{locale}"
+        end
+      end
+
+      @supported_locales.uniq!
     end
 
     def missed
