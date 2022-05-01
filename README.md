@@ -113,6 +113,8 @@ my_labels.get_label("label", "en-us") # => "this is the american english version
 # You can also set up the context for a block of label retrievals
 my_labels.with_locale("en-us") do
   my_labels.get_label("label") # => "this is the american english version of the label"
+  my_labels.current_locale # => {language: "en", locale: "us"}
+  CrI18n.current_locale # => {language: "en", locale: "us"}
 end
 
 # As JSON and YAML supports maps, nested labels can be queried using dot notation

@@ -56,6 +56,10 @@ module CrI18n
     end
   end
 
+  def self.current_locale
+    @@instance.current_locale
+  end
+
   def self.supported_locales
     @@instance.supported_locales
   end
@@ -221,8 +225,11 @@ module CrI18n
       # key by fiber id so we can be thread safe
       @contexts[Fiber.current.object_id] << {language: lang, locale: locale}
       yield
-      @contexts[Fiber.current.object_id].pop
-      @contexts.delete(Fiber.current.object_id) if @contexts[Fiber.current.object_id].empty?
+      @contexts[Fiber.current.object_id].size == 1 ? @contexts.delete(Fiber.current.object_id) : @contexts[Fiber.current.object_id].pop
+    end
+
+    def current_locale
+      @contexts[Fiber.current.object_id]?.try(&.[-1]?)
     end
 
     def get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)

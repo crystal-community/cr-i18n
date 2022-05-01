@@ -74,6 +74,36 @@ Spectator.describe "Label loader" do
     end
   end
 
+  it "supports exposing the current language and locale from context" do
+    labels = CrI18n.load_labels("./spec/spec1")
+    labels.with_locale("en") do
+      expect(labels.current_locale).to eq({language: "en", locale: ""})
+      expect(CrI18n.current_locale).to eq({language: "en", locale: ""})
+    end
+
+    expect(labels.current_locale).to be_nil
+    expect(CrI18n.current_locale).to be_nil
+
+    labels.with_locale("en-Us") do
+      expect(labels.current_locale).to eq({language: "en", locale: "Us"})
+      expect(CrI18n.current_locale).to eq({language: "en", locale: "Us"})
+    end
+
+    labels.with_locale("en") do
+      expect(labels.current_locale).to eq({language: "en", locale: ""})
+      expect(CrI18n.current_locale).to eq({language: "en", locale: ""})
+
+      labels.with_locale("en-Us") do
+        expect(labels.current_locale).to eq({language: "en", locale: "Us"})
+        expect(CrI18n.current_locale).to eq({language: "en", locale: "Us"})
+      end
+      expect(labels.current_locale).to eq({language: "en", locale: ""})
+      expect(CrI18n.current_locale).to eq({language: "en", locale: ""})
+    end
+    expect(labels.current_locale).to be_nil
+    expect(CrI18n.current_locale).to be_nil
+  end
+
   it "static methods support setting language and locale context" do
     CrI18n.load_labels("./spec/spec1")
     CrI18n.with_locale("en") do
