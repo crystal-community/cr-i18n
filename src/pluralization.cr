@@ -57,7 +57,7 @@ define_plural_rule Colognian, ["ksh"] do
 end
 
 # https://github.com/crystal-i18n/i18n/blob/main/src/i18n/pluralization/rule/east_slavic.cr
-define_plural_rule EastSlavic, ["ru"] do
+define_plural_rule EastSlavic, ["be", "bs", "by", "hr", "ru", "sh", "sr", "uk"] do
   mod10 = count % 10
   mod100 = count % 100
 
@@ -149,7 +149,7 @@ define_plural_rule Manx, ["gv"] do
 end
 
 # https://github.com/crystal-i18n/i18n/blob/main/src/i18n/pluralization/rule/one_other.cr
-define_plural_rule OneOther, ["he", "hu", "is", "it-ch", "it", "mn", "nb", "ne", "nl", "nn", "oc", "pt", "st", "sv-se", "sv", "sw", "ur"] do
+define_plural_rule OneOther, ["bg", "bn", "ca", "da", "de-AT", "de-CH", "de-DE", "de", "el", "en-AU", "en-CA", "en-GB", "en-IN", "en-NZ", "en", "eo", "es-419", "es-AR", "es-CL", "es-CO", "es-CR", "es-EC", "es-ES", "es-MX", "es-NI", "es-PA", "es-PE", "es-US", "es-VE", "es", "et", "eu", "fi", "gl", "he", "hu", "is", "it-CH", "it", "mn", "nb", "ne", "nl", "nn", "oc", "pt", "st", "sv-SE", "sv", "sw", "ur"] do
   count == 1 ? "one" : "other"
 end
 
@@ -166,19 +166,19 @@ end
 
 # https://github.com/crystal-i18n/i18n/blob/main/src/i18n/pluralization/rule/one_up_to_two_other.cr
 # Pluralization rule used for: French, Fulah, Kabyle.
-define_plural_rule OneUpToTwoOther, ["kab", "ff", "fr-ca", "fr-ch", "fr-fr", "fr"] do
+define_plural_rule OneUpToTwoOther, ["ff", "fr-CA", "fr-CH", "fr-FR", "fr", "kab"] do
   count >= 0 && count < 2 ? "one" : "other"
 end
 
 # https://github.com/crystal-i18n/i18n/blob/main/src/i18n/pluralization/rule/one_with_zero_other.cr
 # Pluralization rule used for: Akan, Amharic, Bihari, Filipino, guw, Hindi, Lingala, Malagasy, Northen Sotho,
 # Tachelhit, Tagalog, Tigrinya, Walloon.
-define_plural_rule OneWithZeroOther, ["ak", "am", "bh", "guw", "hi-in", "hi", "ln", "mg", "ml", "mr-in", "nso", "or", "pa", "shi", "ti", "wa"] do
+define_plural_rule OneWithZeroOther, ["ak", "am", "bh", "guw", "hi-IN", "hi", "ln", "mg", "ml", "mr-IN", "nso", "or", "pa", "shi", "ti", "wa"] do
   count == 0 || count == 1 ? "one" : "other"
 end
 
 # https://github.com/crystal-i18n/i18n/blob/main/src/i18n/pluralization/rule/other.cr
-define_plural_rule Other, ["az", "bm", "bo", "dz", "fa", "id", "ig", "ii", "ja", "jv", "ka", "kde", "kea", "km", "kn", "ko", "lo", "ms", "my", "pap-aw", "pap-cw", "root", "sah", "ses", "sg", "th", "to", "tr", "vi", "wo", "yo", "zh-cn", "zh-hk", "zh-yue", "zh"] do
+define_plural_rule Other, ["az", "bm", "bo", "dz", "fa", "id", "ig", "ii", "ja", "jv", "ka", "kde", "kea", "km", "kn", "ko", "lo", "ms", "my", "pap-AW", "pap-CW", "root", "sah", "ses", "sg", "th", "to", "tr", "vi", "wo", "yo", "zh-CN", "zh-HK", "zh-TW", "zh-YUE", "zh"] do
   "other"
 end
 
