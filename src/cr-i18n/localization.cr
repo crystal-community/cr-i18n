@@ -1,12 +1,8 @@
 module CrI18n
   @@instance = Labels.new
 
-  # LABEL_DIRECTORY will be a list of one (but we can modify this constant during compile time now)
-  LABEL_DIRECTORY   = [] of String
-  COMPILER_LOADED   = [] of String
-  DEFINED_LABELS    = [] of String
-  PLURAL_LABELS     = [] of String
-  SUPPORTED_LOCALES = [] of String
+  LABEL_DIRECTORY = [] of Nil
+  VISITED_LABELS  = [] of Nil
 
   def self.get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)
     @@instance.get_label(target, lang_locale, count, **splat)
@@ -99,8 +95,6 @@ module CrI18n
   end
 
   class Labels
-    PLURAL_ENDINGS = {"zero", "one", "two", "few", "many", "other"}
-
     property raise_if_missing = false
     property root_locale = ""
     property root_pluralization = ""
@@ -115,9 +109,7 @@ module CrI18n
     @logger = ::Log.for(Labels)
     @missed = Set(String).new
     @contexts = Hash(UInt64, Array(NamedTuple(language: String, locale: String))).new { |h, k| h[k] = [] of NamedTuple(language: String, locale: String) }
-    @plural_labels = Set(String).new
     @frozen = false
-    @discrepencies : Array(String)?
 
     @supported_locales = [] of String
 
@@ -138,85 +130,8 @@ module CrI18n
 
     def freeze
       raise "Already finalized" if @frozen
-      @plural_labels, _ = detect_plural(@root_labels)
       calc_supported_locales
       @frozen = true
-    end
-
-    def label_discrepencies : Array(String)
-      return @discrepencies.not_nil! if @discrepencies
-      discs = [] of String
-
-      # Get the non_plural labels now
-      _, non_plural = detect_plural(@root_labels)
-
-      @plural_labels.each do |target|
-        unless @root_labels.has_key?("#{target}.other")
-          discs << "Plural label '#{target}' is missing the required 'other' plural tag in root labels"
-        end
-      end
-
-      @language_labels.each do |lang, labels|
-        lang_plural, lang_non_plural = detect_plural(labels)
-
-        lang_plural.each do |target|
-          unless @language_labels[lang].has_key?("#{target}.other")
-            discs << "Language '#{lang}' with plural label '#{target}' is missing the required 'other' plural tag"
-          end
-        end
-
-        # compare non-plural labels for parity
-        (non_plural - lang_non_plural).each do |missing_from_lang|
-          discs << "Language '#{lang}' is missing non-plural label '#{missing_from_lang}' defined in root labels"
-        end
-
-        (lang_non_plural - non_plural).each do |extra_lang_label|
-          discs << "Language '#{lang}' has extra non-plural label '#{extra_lang_label}' not found in root labels"
-        end
-
-        # Now compare plural labels
-        (@plural_labels - lang_plural).each do |missing_from_lang|
-          discs << "Language '#{lang}' is missing plural label '#{missing_from_lang}' defined in root labels"
-        end
-
-        (lang_plural - @plural_labels).each do |extra_lang_label|
-          discs << "Language '#{lang}' has extra plural label '#{extra_lang_label}' not found in root labels"
-        end
-      end
-
-      @locale_labels.each do |lang, locales|
-        locales.each do |locale, labels|
-          locale_plural, locale_non_plural = detect_plural(labels)
-
-          locale_plural.each do |target|
-            unless @locale_labels[lang][locale].has_key?("#{target}.other")
-              discs << "Locale '#{lang}-#{locale}' with plural label '#{target}' is missing the required 'other' plural tag"
-            end
-          end
-
-          # compare non-plural labels for parity
-          (non_plural - locale_non_plural).each do |missing_from_locale|
-            discs << "Locale '#{lang}-#{locale}' is missing non-plural label '#{missing_from_locale}' defined in root labels"
-          end
-
-          (locale_non_plural - non_plural).each do |extra_locale_label|
-            discs << "Locale '#{lang}-#{locale}' has extra non-plural label '#{extra_locale_label}' not found in root labels"
-          end
-
-          # Now compare plural labels
-          (@plural_labels - locale_plural).each do |missing_from_locale|
-            discs << "Locale '#{lang}-#{locale}' is missing plural label '#{missing_from_locale}' defined in root labels"
-          end
-
-          (locale_plural - @plural_labels).each do |extra_locale_label|
-            discs << "Locale '#{lang}-#{locale}' has extra plural label '#{extra_locale_label}' not found in root labels"
-          end
-        end
-      end
-
-      @discrepencies = discs
-
-      discs
     end
 
     def with_locale(lang_locale : String)
@@ -233,7 +148,8 @@ module CrI18n
     end
 
     def get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)
-      raise "Label #{target} isn't pluralized, but is using the 'count' (#{count}) param" if count && raise_if_missing && !@plural_labels.includes?(target)
+      is_plural = @root_labels.has_key?("#{target}.other")
+      raise "Label #{target} isn't pluralized, but is using the 'count' (#{count}) param" if count && raise_if_missing && !is_plural
 
       language, locale = CrI18n.parse_locale(lang_locale)
       if language.empty? && @contexts.size > 0
@@ -247,7 +163,7 @@ module CrI18n
       language, locale = CrI18n.parse_locale(root_locale) if language.empty? && locale.empty?
 
       label = target
-      if count && @plural_labels.includes?(target)
+      if count && is_plural
         raise "Unable to pluralize '#{label}': no language or locale detected, and root_pluralization locale has not been set" if language.empty? && locale.empty? && root_pluralization.empty?
         if plural = Pluralization.pluralize(count, language, locale)
           plural_label = "#{label}.#{plural}"
@@ -306,16 +222,6 @@ module CrI18n
       end
 
       nil
-    end
-
-    private def detect_plural(labels)
-      plural = Set(String).new
-      non_plural = Set(String).new
-      labels.keys.each do |target|
-        label, _, plural_tag = target.rpartition('.')
-        PLURAL_ENDINGS.includes?(plural_tag) ? plural << label : non_plural << target
-      end
-      [plural, non_plural]
     end
 
     private def calc_supported_locales

@@ -274,6 +274,17 @@ end
 ...
 ```
 
+## TODO
+[x] Support basic localization (table stakes) through top-level `label` macro
+[x] Support pluralization
+[x] Have compiler checks for label existence
+[x] Have compiler checks for label parity between locales and languages
+[x] Support setting context locale
+[] Support replacing / setting root locale with a specific locale
+[] Support numerical localization
+[] Support date format localization
+[] Convert labels to structs at compile time for quicker label look up (inspired by rosetta)
+
 ## Contributors
 
 - [Troy Sornson](https://github.com/your-github-user) - creator and maintainer
