@@ -75,11 +75,11 @@ module CrI18n
 
     def ensure_plural_use
       if is_plural? && !is_really_plural?
-        error("used the `count` parameter, but this label isn't plural (doesn't have the `other` sub label)")
+        error("used the `count` parameter, but this label isn't plural (doesn't have the `other` sub field)")
       end
 
       if !is_plural? && is_really_plural?
-        error("is a plural label (has an `other` sub label), but is missing the `count` parameter")
+        error("is a plural label (has an `other` sub field), but is missing the `count` parameter")
       end
     end
 
@@ -97,90 +97,66 @@ module CrI18n
       error("wasn't found in labels loaded from #{@directory}") unless resolve_target_to_existing_label_target
     end
 
-    private def detect_plural(labels)
-      plural = Set(String).new
-      non_plural = Set(String).new
-      labels.keys.each do |target|
-        label, _, plural_tag = target.rpartition('.')
-        PLURAL_ENDINGS.includes?(plural_tag) ? plural << label : non_plural << target
-      end
-      [plural, non_plural]
+    def partition_label_keys(keys)
+      plural_labels = plural_from_keys(keys)
+      non_plural = keys.reject { |label| plural_labels.any? { |pl| label.starts_with?(pl) } }
+      {plural_labels, non_plural}
     end
 
-    def label_discrepencies : Array(String)
-      return @discrepencies.not_nil! if @discrepencies
-      discs = [] of String
+    def plural_from_keys(keys)
+      keys.select(&.ends_with?(".other")).map!(&.gsub(/\.other$/, ""))
+    end
 
+    def label_discrepencies
       # Get the non_plural labels now
-      _, non_plural = detect_plural(@root_labels)
 
-      @labels.plural_labels.each do |target|
-        unless @labels.root_labels.has_key?("#{target}.other")
-          discs << "Plural label '#{target}' is missing the required 'other' plural tag in root labels"
-        end
-      end
+      root_plural, root_non_plural = partition_label_keys(@labels.root_labels.keys)
 
       @labels.language_labels.each do |lang, labels|
-        lang_plural, lang_non_plural = detect_plural(labels)
-
-        lang_plural.each do |target|
-          unless @labels.language_labels[lang].has_key?("#{target}.other")
-            discs << "Language '#{lang}' with plural label '#{target}' is missing the required 'other' plural tag"
-          end
-        end
+        lang_plural, lang_non_plural = partition_label_keys(labels.keys)
 
         # compare non-plural labels for parity
-        (non_plural - lang_non_plural).each do |missing_from_lang|
-          discs << "Language '#{lang}' is missing non-plural label '#{missing_from_lang}' defined in root labels"
+        (root_non_plural - lang_non_plural).each do |missing_from_lang|
+          @results << "Language '#{lang}' is missing non-plural label '#{missing_from_lang}' defined in root labels"
         end
 
-        (lang_non_plural - non_plural).each do |extra_lang_label|
-          discs << "Language '#{lang}' has extra non-plural label '#{extra_lang_label}' not found in root labels"
+        (lang_non_plural - root_non_plural).each do |extra_lang_label|
+          @results << "Language '#{lang}' has extra non-plural label '#{extra_lang_label}' not found in root labels"
         end
 
         # Now compare plural labels
-        (@labels.plural_labels - lang_plural).each do |missing_from_lang|
-          discs << "Language '#{lang}' is missing plural label '#{missing_from_lang}' defined in root labels"
+        (root_plural - lang_plural).each do |missing_from_lang|
+          @results << "Language '#{lang}' is missing plural label '#{missing_from_lang}' defined in root labels"
         end
 
-        (lang_plural - @labels.plural_labels).each do |extra_lang_label|
-          discs << "Language '#{lang}' has extra plural label '#{extra_lang_label}' not found in root labels"
+        (lang_plural - root_plural).each do |extra_lang_label|
+          @results << "Language '#{lang}' has extra plural label '#{extra_lang_label}' not found in root labels"
         end
       end
 
       @labels.locale_labels.each do |lang, locales|
         locales.each do |locale, labels|
-          locale_plural, locale_non_plural = detect_plural(labels)
-
-          locale_plural.each do |target|
-            unless @labels.locale_labels[lang][locale].has_key?("#{target}.other")
-              discs << "Locale '#{lang}-#{locale}' with plural label '#{target}' is missing the required 'other' plural tag"
-            end
-          end
+          locale_plural, locale_non_plural = partition_label_keys(labels.keys)
 
           # compare non-plural labels for parity
-          (non_plural - locale_non_plural).each do |missing_from_locale|
-            discs << "Locale '#{lang}-#{locale}' is missing non-plural label '#{missing_from_locale}' defined in root labels"
+          (root_non_plural - locale_non_plural).each do |missing_from_locale|
+            @results << "Locale '#{lang}-#{locale}' is missing non-plural label '#{missing_from_locale}' defined in root labels"
           end
 
-          (locale_non_plural - non_plural).each do |extra_locale_label|
-            discs << "Locale '#{lang}-#{locale}' has extra non-plural label '#{extra_locale_label}' not found in root labels"
+          (locale_non_plural - root_non_plural).each do |extra_locale_label|
+            @results << "Locale '#{lang}-#{locale}' has extra non-plural label '#{extra_locale_label}' not found in root labels"
           end
 
           # Now compare plural labels
-          (@labels.plural_labels - locale_plural).each do |missing_from_locale|
-            discs << "Locale '#{lang}-#{locale}' is missing plural label '#{missing_from_locale}' defined in root labels"
+          (root_plural - locale_plural).each do |missing_from_locale|
+            @results << "Locale '#{lang}-#{locale}' is missing plural label '#{missing_from_locale}' defined in root labels"
           end
 
-          (locale_plural - @labels.plural_labels).each do |extra_locale_label|
-            discs << "Locale '#{lang}-#{locale}' has extra plural label '#{extra_locale_label}' not found in root labels"
+          (locale_plural - root_plural).each do |extra_locale_label|
+            @results << "Locale '#{lang}-#{locale}' has extra plural label '#{extra_locale_label}' not found in root labels"
           end
         end
       end
-
-      @discrepencies = discs
-
-      discs
     end
 
     def perform_check
@@ -196,9 +172,8 @@ module CrI18n
         check_label_existence
       end
 
-      # TODO: move label_discrepencies check to this class
       # Perform the label parity check if applicable
-      # label_discrepencies.each { |disc| @results << disc } if @enforce_parity
+      label_discrepencies if @enforce_parity
 
       unverified_root_label_keys = (@labels.root_labels.keys - @verified_root_label_keys)
       # Cleanup unverified so that any verified plural labels accounts for all plural labels
@@ -206,11 +181,9 @@ module CrI18n
       unverified_root_label_keys.reject! { |label| verified_plural.any? { |f| label.starts_with?(f) } }
 
       # Cleanup unverified so that plural labels only get complained about once
-      unverified_plural = unverified_root_label_keys.select(&.ends_with?(".other")).map(&.gsub(/\.other$/, ""))
-      unverified_root_label_keys.reject! { |label| !label.ends_with?(".other") && unverified_plural.any? { |f| label.starts_with?(f) } }
-      unverified_root_label_keys.map! { |label| label.ends_with?(".other") ? label.gsub(/\.other$/, "") : label }
+      unverified_plural, unverified_non_plural = partition_label_keys(unverified_root_label_keys)
 
-      @results << "These labels are defined in #{@directory} but weren't used and can be removed:\n\t#{unverified_root_label_keys.join("\n\t")}" unless unverified_root_label_keys.empty?
+      @results << "These labels are defined in #{@directory} but weren't used and can be removed:\n\t#{(unverified_plural + unverified_non_plural).join("\n\t")}" unless unverified_root_label_keys.empty?
 
       @results.sort!
     end
