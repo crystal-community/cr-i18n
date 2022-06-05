@@ -1,7 +1,7 @@
 require "./spec_helper"
 
 Spectator.describe "Label loader" do
-  {% unless flag?(:enforce_labels) %}
+  unless_enforce do
     it "loads labels" do
       CrI18n.load_labels("./spec/spec1")
 
@@ -128,16 +128,20 @@ Spectator.describe "Label loader" do
 
       expect(CrI18n.supported_locales).to eq ["en", "en-Us"]
     end
-  {% else %}
+  end
+
+  if_enforce do
     context "with compiler checking" do
       it "has the compiler check labels" do
-        # This test doesn't run anything normally, but can be used to test the various compiler checks by uncommenting the lines below
-        # and running specs with the '-Denforce_labels' compiler flag
+        # Output of this test should be a compiler error with:
+        # Error: Found errors in compiled labels under "./spec/compiler_spec":
 
-        # FIRST: Uncomment the lines below, and uncomment these two as well. Then follow the TEST descriptions.
-        # TEST: Commenting out these lines should have the compiler_load_labels throw an error due to unused labels
+        # Label 'does.not.exist' at ./spec/cr-i18n_spec.cr:155 wasn't found in labels loaded from ./spec/compiler_spec
+        # Label 'nonplural_label' at ./spec/cr-i18n_spec.cr:158 used the `count` parameter, but this label isn't plural (doesn't have the `other` sub field)
+        # These labels are defined in ./spec/compiler_spec but weren't used and can be removed:
+        #   plural_label
+        #   invalid_plural.one
 
-        # FIRST: Uncomment these lines, then uncomment a TEST line and run specs with -Denforce_labels
         CrI18n.compiler_load_labels("./spec/compiler_spec")
         CrI18n::Pluralization.auto_register_rules
         CrI18n.root_pluralization = "en"
@@ -146,20 +150,19 @@ Spectator.describe "Label loader" do
         label(nonplural_label)
         var = "erpol"
         label("int.#{var}.ated")
-        # TEST: compiler should only allow a single 'compiler_load_labels' macro to run
-        # CrI18n.compiler_load_labels("./spec/compiler_spec")
-
         # TEST: Check that non-existent labels throw compiler errors
         expect(label(does.not.exist)).to eq "does.not.exist"
-
         # TEST: Check that if a 'count' param is specified, that the label must be plural
         expect(label(nonplural_label, count: 1)).to eq "nonplural_label"
+
+        # TEST: compiler should only allow a single 'compiler_load_labels' macro to run
+        # CrI18n.compiler_load_labels("./spec/compiler_spec")
       end
     end
-  {% end %}
+  end
 end
 
-{% if flag?(:enforce_labels) %}
+if_enforce do
   class CompilerRule < CrI18n::Pluralization::PluralRule
     LOCALES = ["es", "en-nope", "es-mx"]
 
@@ -168,4 +171,4 @@ end
       "other"
     end
   end
-{% end %}
+end

@@ -1,6 +1,6 @@
 require "./spec_helper"
 
-{% unless flag?(:enforce_labels) %}
+unless_enforce do
   class TestEnglishSurePluralRule < CrI18n::Pluralization::PluralRule
     LOCALES = ["en-sure"]
 
@@ -85,4 +85,4 @@ require "./spec_helper"
       end
     end
   end
-{% end %}
+end

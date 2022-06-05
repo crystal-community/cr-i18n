@@ -1,0 +1,2 @@
+labels:
+  exists: from %{location}, hello %{name}!

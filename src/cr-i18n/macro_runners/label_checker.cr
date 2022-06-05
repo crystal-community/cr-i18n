@@ -5,7 +5,7 @@ module CrI18n
   end
 
   class LabelChecker
-    PLURAL_ENDINGS = {"zero", "one", "two", "few", "many", "other"}
+    getter target
 
     def initialize(@labels : Labels, @visited_labels : Array(String), @enforce_parity : Bool, @directory : String)
       @results = [] of String
@@ -18,28 +18,25 @@ module CrI18n
       @params = ""
       @interpolated = "no"
       @verified_root_label_keys = [] of String
-      @discrepencies = [] of String
     end
 
     # ============================= LINE ==============================
 
-    private def resolve_target_to_existing_label_target
+    def resolve_target_to_existing_label_target
       @labels.root_labels.keys.find(&.match(regex_for_target))
     end
 
-    private def regex_for_target
+    def regex_for_target
       /^#{target.gsub(/\./, "\\.").gsub(/#\{.*?\}/, ".*")}(\.other)?$/
     end
 
-    private def find_params_from_label
+    def find_params_from_label
       return nil unless real_target = resolve_target_to_existing_label_target
 
       label = @labels.root_labels[real_target]
       params = label.scan(/%\{(.*?)\}/).map { |m| m[1] }
       params.empty? ? nil : params
     end
-
-    getter target
 
     def params
       return [] of String if @params == ""
@@ -89,8 +86,8 @@ module CrI18n
       missing_params = (expected_params - params)
       extra_params = (params - expected_params)
 
-      error("is missing parameters #{missing_params.join(", ")} (expecting #{expected_params.join(", ")}") unless missing_params.empty?
-      error("has unexpected parameters #{extra_params.join(", ")} (expecting #{expected_params.join(", ")}") unless extra_params.empty?
+      error("is missing parameters '#{missing_params.join("', '")}' (expecting #{expected_params.join(", ")})") unless missing_params.empty?
+      error("has unexpected parameters '#{extra_params.join("', '")}' (expecting #{expected_params.join(", ")})") unless extra_params.empty?
     end
 
     def check_label_existence
