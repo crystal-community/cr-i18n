@@ -7,8 +7,8 @@ unless_enforce do
     let(dir) { "the_directory" }
     let(line_number) { "4" }
 
-    def checker(visitors)
-      CrI18n::LabelChecker.new(labels, visitors, false, dir)
+    def checker(visitors, labels = labels, enforce_parity = false, dir = dir)
+      CrI18n::LabelChecker.new(labels, visitors, enforce_parity, dir)
     end
 
     context "with basic checks" do
@@ -64,8 +64,30 @@ unless_enforce do
 
     context "with label parity" do
       context "when checking languages" do
+        it "checks for extra labels in language" do
+          labels = CrI18n.load_labels("./spec/discrepency_specs/extra_label_in_en")
+          expect(checker(["label:filename:4:false::literal"] of String, labels: labels, enforce_parity: true).perform_check).to eq ["Language 'en' has extra non-plural label 'nope' not found in root labels"]
+        end
+
+        it "checks for missing labels in language" do
+          labels = CrI18n.load_labels("./spec/discrepency_specs/missing_label_in_en")
+          expect(checker(["label:filename:4:false::literal", "extra:filename:4:false::literal"] of String,
+            labels: labels,
+            enforce_parity: true).perform_check).to eq ["Language 'en' is missing non-plural label 'label' defined in root labels"]
+        end
       end
       context "when checking locales" do
+        it "checks for extra labels in locale" do
+          labels = CrI18n.load_labels("./spec/discrepency_specs/extra_label_in_en-us")
+          expect(checker(["label:filename:4:false::literal"] of String, labels: labels, enforce_parity: true).perform_check).to eq ["Locale 'en-us' has extra non-plural label 'nope' not found in root labels"] of String
+        end
+
+        it "checks for missing labels in locale" do
+          labels = CrI18n.load_labels("./spec/discrepency_specs/missing_label_in_en-us")
+          expect(checker(["label:filename:4:false::literal", "extra:filename:4:false::literal"] of String,
+            labels: labels,
+            enforce_parity: true).perform_check).to eq ["Locale 'en-us' is missing non-plural label 'label' defined in root labels"] of String
+        end
       end
     end
   end
