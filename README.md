@@ -148,6 +148,12 @@ Different plural tags that are supported are:
 
 Where the "other" is a required term and a catch all for when the other plural tags don't apply. Different locales can define different pluralization rules (explained in next section) that will translate a given `count` value into a plural tag, and the plural tag will be used during label lookup. If a plural tag is returned that doesn't exist in a label file, then it will be treated as a missing label.
 
+Many plural rules have already been created for various locales and languages. To use them out of the box, add this to your crystal:
+
+```crystal
+require "cr-i18n/plural_rules"
+```
+
 #### Defining Plural Rules
 
 Plural rules extend the `CrI18n::Pluralization::PluralRule` class and define the `apply` method. If automatic locale registration is desired, you also need to define the `for_locale` method to provide a list of locales the plural rule should apply for.
