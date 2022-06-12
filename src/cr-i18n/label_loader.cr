@@ -28,12 +28,14 @@ module CrI18n
         key_s = key.is_a?(String) ? key : key.as_s
         raise "Incorrect format for label file #{@file_name}, key '#{key_s}'' contains spaces" if key_s.includes?(" ")
         pref = prefix.size > 0 ? "#{prefix}." : ""
-        if val = new_blob.as_s?
-          labels["#{pref}#{key_s}"] = val
-        elsif val = new_blob.as_h?
+        if val = new_blob.as_h?
           recursive_load("#{pref}#{key_s}", val, labels)
+        elsif val = new_blob.as_s?
+          labels["#{pref}#{key_s}"] = val
+        elsif new_blob.raw != nil
+          labels["#{pref}#{key_s}"] = new_blob.raw.to_s
         else
-          raise "Incorrect format for label file #{@file_name}, found #{new_blob.raw.class}, expected String or Hash"
+          raise "Incorrect format for label file #{@file_name}, found null at #{pref}#{key_s}"
         end
       end
     end

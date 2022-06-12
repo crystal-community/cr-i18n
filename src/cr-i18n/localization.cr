@@ -59,7 +59,6 @@ module CrI18n
     end
     @@instance = labels
     @@instance.freeze
-    Formatter.init
     @@instance
   end
 
@@ -143,8 +142,12 @@ module CrI18n
       language, locale = parse_locale(root_locale) if language.empty? && locale.empty?
 
       # Don't return non-supported languages or locales (will force resolution to root labels)
-      language = "" unless CrI18n.supported_locales.includes?(language)
-      locale = "" unless CrI18n.supported_locales.includes?("#{language}-#{locale}")
+      unless CrI18n.supported_locales.includes?("#{language}-#{locale}")
+        unless CrI18n.supported_locales.includes?(language)
+          language = ""
+        end
+        locale = ""
+      end
 
       {language, locale}
     end
@@ -155,7 +158,7 @@ module CrI18n
       splat.each_with_index do |name, val|
         if format_type = get_label?("cri18n.formatters.#{name}.type", language, locale)
           fmt = get_label?("cri18n.formatters.#{name}.format", language, locale)
-          val = Formatter.format(format_type, fmt, val)
+          val = FormatterManager.format(format_type, fmt, val)
         end
         label = label.gsub("%{#{name}}", val)
       end
@@ -173,10 +176,16 @@ module CrI18n
       get_label?(target, language, locale) || target
     end
 
-    def get_label(target : String, specified_lang_locale : String = "", *, count : (Float | Int)? = nil, **splat)
-      language, locale = lang_locale(specified_lang_locale)
+    def get_label(target : String = "", locale : String = "", *, count : (Float | Int)? = nil, **splat)
+      language, locale = lang_locale(locale)
 
-      label = count ? resolve_plural_label(target, count, language, locale) : resolve_non_plural_label(target, language, locale)
+      if target != ""
+        label = count ? resolve_plural_label(target, count, language, locale) : resolve_non_plural_label(target, language, locale)
+      elsif splat.size == 1 && (key = splat.keys[0]?)
+        label = "%{#{key}}"
+      else
+        label = target
+      end
 
       format_label(label, language, locale, count, **splat)
     end

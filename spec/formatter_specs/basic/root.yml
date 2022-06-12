@@ -1,0 +1,25 @@
+cri18n:
+  formatters:
+    us_date:
+      type: time_formatter
+      format: "%m-%d-%Y"
+    uk_date:
+      type: time_formatter
+      format: "%d-%m-%Y"
+    number:
+      type: number_formatter
+      format: 8
+    another_number:
+      type: number_formatter
+      format: 3
+    nope:
+      type: doesnotexist
+    user:
+      type: user_formatter
+
+basic:
+  no_formatter: "There is no formatter for %{str}, and here's a number: %{int}"
+  uses_number: This is a test of the %{number} formatter
+  uses_another_number: This is a test of the %{another_number} formatter
+  user: "Hello, %{user}!"
+  doesnotexist: This label uses the doesnotexist param %{nope}

@@ -1,0 +1,5 @@
+cri18n:
+  formatters:
+    date:
+      type: time_formatter
+      format: "%m-%d-%Y"
