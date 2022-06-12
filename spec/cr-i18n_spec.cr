@@ -34,22 +34,6 @@ Spectator.describe "Label loader" do
       expect(labels.missed).to eq Set{"nope", "still nope"}
     end
 
-    it "raises when missing a label" do
-      labels = CrI18n.load_labels("./spec/spec1")
-
-      expect(labels.get_label("nope")).to eq "nope"
-      expect(labels.missed).to eq Set{"nope"}
-
-      labels.raise_if_missing = true
-
-      expect { labels.get_label("nope") }.to raise_error("Label nope not found")
-
-      labels.raise_if_missing = false
-
-      expect(labels.get_label("nope")).to eq "nope"
-      expect(labels.missed).to eq Set{"nope"}
-    end
-
     it "supports parameterized labels" do
       labels = CrI18n.load_labels("./spec/spec1")
 

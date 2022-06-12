@@ -36,6 +36,10 @@ module CrI18n
     end
 
     def self.pluralize(count : Float | Int, language : String, locale : String) : String?
+      # Special case: if we explicitly don't have a language or locale to use, treat it as if we're developing and using the
+      # root labels, and only need to use a pluralization of "other"
+      return "other" if language.empty? && locale.empty?
+
       if locale_rule = @@locale_rules["#{language}-#{locale}"]?
         return locale_rule.apply(count)
       end
@@ -44,6 +48,8 @@ module CrI18n
         return lang_rule.apply(count)
       end
 
+      # We received a locale / language, but couldn't find any pluralization rules for it. Compiler check should find these,
+      # runtime we'll let slide
       nil
     end
   end

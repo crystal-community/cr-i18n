@@ -46,22 +46,8 @@ unless_enforce do
       expect(label("new_label", count: 3)).to eq "The other one"
     end
 
-    it "raises if count is used with a non-plural label" do
-      CrI18n.load_labels("./spec/plural_spec")
-      CrI18n.root_locale = "en"
-
-      expect(CrI18n.get_label("nonplural_label", count: 1)).to eq "This is not plural"
-
-      CrI18n.raise_if_missing = true
-
-      expect_raises(Exception, /Label nonplural_label isn't pluralized.*/) do
-        CrI18n.get_label("nonplural_label", count: 1)
-      end
-    end
-
     it "Pluralizes and falls back to language" do
       CrI18n.load_labels("./spec/plural_spec")
-      CrI18n.root_pluralization = "en-us"
       CrI18n::Pluralization.auto_register_rules
 
       expect(CrI18n.get_label("label", "en", count: 2)).to eq "two of 'em"
@@ -72,7 +58,7 @@ unless_enforce do
 
     it "rules all can run" do
       CrI18n.load_labels("./spec/plural_spec")
-      CrI18n.root_pluralization = "en-us"
+      CrI18n.root_locale = "en-us"
       CrI18n::Pluralization.auto_register_rules
 
       CrI18n::Pluralization.supported_locales.each do |locale|

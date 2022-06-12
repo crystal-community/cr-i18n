@@ -102,7 +102,7 @@ label("label") # => "this is the fallback label, in case there's not a language 
 # Getting a label without a language or locale specified (root)
 my_labels.get_label("label") # => "this is the fallback label, in case there's not a language or locale version of this"
 my_labels.resolve_to_root = false
-my_labels.get_label("label") # => "label", or raised exception if raise_if_missing is true (see below)
+my_labels.get_label("label") # => "label"
 
 # Getting a label for a language
 my_labels.get_label("label", "en") # => "this is the english version of the label"
@@ -196,7 +196,6 @@ NOTE: Only one plural rule per language / locale is supported. Trying to registe
 After developing, you may have put in dummy labels in place just to get things working. To now find all those locations so you can remove the dummy values and put them in label files, you have a few options, depending on how you initialized above.
 
 * Use the compiler flag `-Denforce_labels` to trigger compiler enforcements for all usages of the `label` macro
-* Use `CrI18n.raise_if_missing = true` or `my_labels.raise_if_missing = true` to trigger runtime exceptions instead
 
 Examples:
 
@@ -214,18 +213,6 @@ my_label.get_label("nope") # => "nope"
 
 # You can get a set of all labels that were queried for, but don't exist
 my_label.missed # => Set{"nope"}
-
-# If you wish these to become runtime errors, can set the raise_if_missing config
-CrI18n.raise_if_missing = true
-# OR
-my_labels.raise_if_missing = true
-
-my_label.get_label("nope") # => Exception thrown
-
-# SOMEWHAT COMBINED
-# Because the `label` macro delegates to CrI18n.get_label underneath, you can get some overlapping behavior
-CrI18n.raise_if_missing = true
-label("this doesn't exist") # => Compiler error if -Denforce_labels, or runtime error otherwise
 ```
 
 ### Looking for Missing Labels in Language or Locale Labels
@@ -286,9 +273,9 @@ end
 [x] Have compiler checks for label existence
 [x] Have compiler checks for label parity between locales and languages
 [x] Support setting context locale
-[] Support replacing / setting root locale with a specific locale
 [] Support numerical localization
 [] Support date format localization
+[] Support replacing / setting root locale with a specific locale
 [] Convert labels to structs at compile time for quicker label look up (inspired by rosetta)
 
 ## Contributors

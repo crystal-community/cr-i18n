@@ -4,20 +4,12 @@ module CrI18n
   LABEL_DIRECTORY = [] of Nil
   VISITED_LABELS  = [] of Nil
 
-  def self.get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)
-    @@instance.get_label(target, lang_locale, count, **splat)
+  def self.get_label(target : String, lang_locale : String = "", *, count : (Float | Int)? = nil, **splat)
+    @@instance.get_label(target, lang_locale, **splat, count: count)
   end
 
   def self.missed
     @@instance.missed
-  end
-
-  def self.raise_if_missing
-    @@instance.raise_if_missing
-  end
-
-  def self.raise_if_missing=(value : Bool)
-    @@instance.raise_if_missing = value
   end
 
   def self.root_locale
@@ -26,24 +18,6 @@ module CrI18n
 
   def self.root_locale=(value : String)
     @@instance.root_locale = value
-  end
-
-  def self.root_pluralization
-    @@instance.root_pluralization
-  end
-
-  def self.root_pluralization=(value : String)
-    @@instance.root_pluralization = value
-  end
-
-  def self.parse_locale(lang_locale : String)
-    if lang_locale.count('-') >= 1
-      lang, locale = lang_locale.split('-', 2)
-    else
-      lang = lang_locale
-    end
-
-    [lang, locale || ""]
   end
 
   def self.with_locale(lang_locale : String, &)
@@ -85,6 +59,7 @@ module CrI18n
     end
     @@instance = labels
     @@instance.freeze
+    Formatter.init
     @@instance
   end
 
@@ -95,9 +70,7 @@ module CrI18n
   end
 
   class Labels
-    property raise_if_missing = false
     property root_locale = ""
-    property root_pluralization = ""
     property resolve_to_root = true
     getter supported_locales
 
@@ -135,7 +108,7 @@ module CrI18n
     end
 
     def with_locale(lang_locale : String)
-      lang, locale = CrI18n.parse_locale(lang_locale)
+      lang, locale = parse_locale(lang_locale)
 
       # key by fiber id so we can be thread safe
       @contexts[Fiber.current.object_id] << {language: lang, locale: locale}
@@ -147,11 +120,18 @@ module CrI18n
       @contexts[Fiber.current.object_id]?.try(&.[-1]?)
     end
 
-    def get_label(target : String, lang_locale : String = "", count : (Float | Int)? = nil, **splat)
-      is_plural = @root_labels.has_key?("#{target}.other")
-      raise "Label #{target} isn't pluralized, but is using the 'count' (#{count}) param" if count && raise_if_missing && !is_plural
+    private def parse_locale(lang_locale : String)
+      if lang_locale.count('-') >= 1
+        lang, locale = lang_locale.split('-', 2)
+      else
+        lang = lang_locale
+      end
 
-      language, locale = CrI18n.parse_locale(lang_locale)
+      [lang, locale || ""]
+    end
+
+    private def lang_locale(specified)
+      language, locale = parse_locale(specified)
       if language.empty? && @contexts.size > 0
         curr_context = @contexts[Fiber.current.object_id][-1]
         language = curr_context[:language]
@@ -160,45 +140,45 @@ module CrI18n
         end
       end
 
-      language, locale = CrI18n.parse_locale(root_locale) if language.empty? && locale.empty?
+      language, locale = parse_locale(root_locale) if language.empty? && locale.empty?
 
-      label = target
-      if count && is_plural
-        raise "Unable to pluralize '#{label}': no language or locale detected, and root_pluralization locale has not been set" if language.empty? && locale.empty? && root_pluralization.empty?
-        if plural = Pluralization.pluralize(count, language, locale)
-          plural_label = "#{label}.#{plural}"
-        elsif root_pluralization
-          tlang, tlocale = CrI18n.parse_locale(root_pluralization)
-          if plural = Pluralization.pluralize(count, tlang, tlocale)
-            plural_label = "#{label}.#{plural}"
-          else
-            raise_unpluralizable_error(label, language, locale)
-          end
-        else
-          raise_unpluralizable_error(label, language, locale)
-        end
-      end
+      # Don't return non-supported languages or locales (will force resolution to root labels)
+      language = "" unless CrI18n.supported_locales.includes?(language)
+      locale = "" unless CrI18n.supported_locales.includes?("#{language}-#{locale}")
 
-      if plural_label
-        ret = get_label?(plural_label, language, locale) || get_label?(label, language, locale) || label
-      else
-        ret = get_label?(label, language, locale) || label
-      end
-
-      raise "Label #{label} not found" if label == ret && raise_if_missing
-
-      splat.each_with_index do |name, val|
-        ret = ret.gsub("%{#{name}}", val)
-      end
-      ret
+      {language, locale}
     end
 
-    private def raise_unpluralizable_error(label, language, locale)
-      errors = [] of String
-      errors << "Unable to pluralize #{label}: "
-      errors << "No pluralization rules for detected locale '#{language}#{locale.empty? ? "" : "-" + locale}'" if !language.empty?
-      errors << "No pluralization rules for root_pluralization #{root_pluralization}" if !root_pluralization.empty?
-      raise errors.join
+    private def format_label(label, language, locale, count, **splat)
+      # TODO: forbid `count` as a formatted param
+      label = label.gsub("%{count}", count)
+      splat.each_with_index do |name, val|
+        if format_type = get_label?("cri18n.formatters.#{name}.type", language, locale)
+          fmt = get_label?("cri18n.formatters.#{name}.format", language, locale)
+          val = Formatter.format(format_type, fmt, val)
+        end
+        label = label.gsub("%{#{name}}", val)
+      end
+      label
+    end
+
+    private def resolve_plural_label(target, count, language, locale)
+      if plural = Pluralization.pluralize(count, language, locale)
+        return get_label?("#{target}.#{plural}", language, locale) || target
+      end
+      target
+    end
+
+    private def resolve_non_plural_label(target, language, locale)
+      get_label?(target, language, locale) || target
+    end
+
+    def get_label(target : String, specified_lang_locale : String = "", *, count : (Float | Int)? = nil, **splat)
+      language, locale = lang_locale(specified_lang_locale)
+
+      label = count ? resolve_plural_label(target, count, language, locale) : resolve_non_plural_label(target, language, locale)
+
+      format_label(label, language, locale, count, **splat)
     end
 
     private def get_label?(target : String, language : String, locale : String)
@@ -239,46 +219,6 @@ module CrI18n
 
     def missed
       @missed
-    end
-  end
-
-  class LabelLoader
-    def initialize(@file_name : String)
-    end
-
-    def read
-      File.open(@file_name) do |file|
-        return load(JSON.parse(file)) if @file_name.ends_with?(".json")
-        return load(YAML.parse(file)) if @file_name.ends_with?(".yml") || @file_name.ends_with?(".yaml")
-        raise "Unknown file extension in file #{@file_name}, can only support files ending with 'json', 'yml', or 'yaml'"
-      rescue e
-        raise "Error while reading file #{@file_name}: #{e.message}"
-      end
-    end
-
-    def load(content : JSON::Any | YAML::Any)
-      labels = {} of String => String
-      if h = content.as_h
-        recursive_load("", h, labels)
-      else
-        raise "Incorrect format for label file #{@file_name}"
-      end
-      labels
-    end
-
-    def recursive_load(prefix : String, blob : Hash(YAML::Any, YAML::Any) | Hash(String, JSON::Any), labels : Hash(String, String))
-      blob.each do |key, new_blob|
-        key_s = key.is_a?(String) ? key : key.as_s
-        raise "Incorrect format for label file #{@file_name}, key '#{key_s}'' contains spaces" if key_s.includes?(" ")
-        pref = prefix.size > 0 ? "#{prefix}." : ""
-        if val = new_blob.as_s?
-          labels["#{pref}#{key_s}"] = val
-        elsif val = new_blob.as_h?
-          recursive_load("#{pref}#{key_s}", val, labels)
-        else
-          raise "Incorrect format for label file #{@file_name}, found #{new_blob.raw.class}, expected String or Hash"
-        end
-      end
     end
   end
 end

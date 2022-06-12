@@ -20,8 +20,6 @@ module CrI18n
       @verified_root_label_keys = [] of String
     end
 
-    # ============================= LINE ==============================
-
     def resolve_target_to_existing_label_target
       @labels.root_labels.keys.find(&.match(regex_for_target))
     end
