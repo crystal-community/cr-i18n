@@ -5,6 +5,7 @@ plural_label:
 invalid_plural:
   one: yes string
 unused_label: unused
+label_with_params: This label has %{one_param} and %{two_param}
 int:
   erpol:
     ated: interpolated

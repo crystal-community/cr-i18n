@@ -2,5 +2,6 @@ nonplural_label: exists
 plural_label:
   one: yes string
   other: no string
+label_with_params: This label has %{one_param} and %{three_param}
 invalid_plural:
   one: yes string

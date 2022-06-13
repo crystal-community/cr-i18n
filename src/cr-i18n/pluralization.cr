@@ -26,7 +26,7 @@ module CrI18n
       {% for rule in Pluralization::PluralRule.subclasses %}
       rule = {{rule}}.new
 
-      {% raise "Pluralization rule #{rule} is missing the LOCALES and can't be auto registered; please define the LOCALES constant for this rule as an array of support locales (e.g. LOCALES = [\"en\", \"en-us\"])" unless rule.constants.includes?("LOCALES".id) %}
+      {% raise "Pluralization rule #{rule} is missing the LOCALES constant and can't be auto registered; please define the LOCALES constant for this rule as an array of support locales (e.g. LOCALES = [\"en\", \"en-us\"])" unless rule.constants.includes?("LOCALES".id) %}
       locale = {{rule}}::LOCALES
 
       locale.each do |loc|

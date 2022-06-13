@@ -128,7 +128,6 @@ Spectator.describe "Label loader" do
 
         CrI18n.compiler_load_labels("./spec/compiler_spec")
         CrI18n::Pluralization.auto_register_rules
-        CrI18n.root_pluralization = "en"
 
         label(unused_label)
         label(nonplural_label)

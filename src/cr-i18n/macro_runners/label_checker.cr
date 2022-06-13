@@ -7,7 +7,7 @@ module CrI18n
   class LabelChecker
     getter target
 
-    def initialize(@labels : Labels, @visited_labels : Array(String), @enforce_parity : Bool, @directory : String)
+    def initialize(@labels : Labels, @visited_labels : Array(String), @pluralized_locales : Array(String), @enforce_parity : Bool, @directory : String)
       @results = [] of String
       @checked = false
       @target = "UNKNOWN"
@@ -32,6 +32,10 @@ module CrI18n
       return nil unless real_target = resolve_target_to_existing_label_target
 
       label = @labels.root_labels[real_target]
+      parse_params_from_label(label)
+    end
+
+    def parse_params_from_label(label)
       params = label.scan(/%\{(.*?)\}/).map { |m| m[1] }
       params.empty? ? nil : params
     end
@@ -79,7 +83,7 @@ module CrI18n
     end
 
     def ensure_param_consistency
-      return unless (expected_params = (find_params_from_label || [] of String)) || !params.empty?
+      return unless (expected_params = (find_params_from_label || [] of String)) || params.size > 0
 
       missing_params = (expected_params - params)
       extra_params = (params - expected_params)
@@ -102,11 +106,23 @@ module CrI18n
       keys.select(&.ends_with?(".other")).map!(&.gsub(/\.other$/, ""))
     end
 
+    def check_param_parity(prefix, root_label, other_label)
+      root_label_params = parse_params_from_label(root_label) || [] of String
+      other_label_params = parse_params_from_label(other_label) || [] of String
+      return if root_label_params.empty? && other_label_params.empty?
+      return if root_label_params == other_label_params
+      missing = root_label_params - other_label_params
+      extra = other_label_params - root_label_params
+      @results << "#{prefix} is missing param#{missing.size > 1 ? "s" : ""} #{missing.join(", ")} (expected #{root_label_params.join(", ")})" unless missing.empty?
+      @results << "#{prefix} has unexpected param#{extra.size > 1 ? "s" : ""} #{extra.join(", ")} (expected #{root_label_params.join(", ")})" unless extra.empty?
+    end
+
     def label_discrepencies
       # Get the non_plural labels now
 
       root_plural, root_non_plural = partition_label_keys(@labels.root_labels.keys)
 
+      # Check that language labels match root
       @labels.language_labels.each do |lang, labels|
         lang_plural, lang_non_plural = partition_label_keys(labels.keys)
 
@@ -127,8 +143,23 @@ module CrI18n
         (lang_plural - root_plural).each do |extra_lang_label|
           @results << "Language '#{lang}' has extra plural label '#{extra_lang_label}' not found in root labels"
         end
+
+        root_non_plural.each do |label_key|
+          if lang_label = labels[label_key]?
+            root_label = @labels.root_labels[label_key]
+            check_param_parity("Language '#{lang}'s label '#{label_key}'", root_label, lang_label)
+          end
+        end
+
+        root_plural.each do |label_key|
+          root_label = @labels.root_labels["#{label_key}.other"]
+          labels.keys.select(&.starts_with?(label_key)).each do |check_plural_label|
+            check_param_parity("Language '#{lang}' plural label '#{check_plural_label}'", root_label, labels[check_plural_label])
+          end
+        end
       end
 
+      # Check that locale labels match root
       @labels.locale_labels.each do |lang, locales|
         locales.each do |locale, labels|
           locale_plural, locale_non_plural = partition_label_keys(labels.keys)
@@ -150,6 +181,21 @@ module CrI18n
           (locale_plural - root_plural).each do |extra_locale_label|
             @results << "Locale '#{lang}-#{locale}' has extra plural label '#{extra_locale_label}' not found in root labels"
           end
+
+          # TODO: check labels have matching paramaters
+          root_non_plural.each do |label_key|
+            if locale_label = labels[label_key]?
+              root_label = @labels.root_labels[label_key]
+              check_param_parity("Locale '#{lang}-#{locale}'s label '#{label_key}'", root_label, locale_label)
+            end
+          end
+
+          root_plural.each do |label_key|
+            root_label = @labels.root_labels["#{label_key}.other"]
+            labels.keys.select(&.starts_with?(label_key)).each do |check_plural_label|
+              check_param_parity("Locale '#{lang}-#{locale}' plural label '#{check_plural_label}'", root_label, labels[check_plural_label])
+            end
+          end
         end
       end
     end
@@ -166,6 +212,13 @@ module CrI18n
         ensure_param_consistency
         check_label_existence
       end
+
+      # Check that we have pluralization support for all discovered locales
+      (@labels.supported_locales - @pluralized_locales.uniq).each do |unpluralized_locale|
+        @results << "Locale '#{unpluralized_locale}' doesn't have a plural rule that supports it"
+      end
+
+      # TODO: ensure we have formatters for all formatter labels
 
       # Perform the label parity check if applicable
       label_discrepencies if @enforce_parity

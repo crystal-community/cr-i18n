@@ -6,9 +6,11 @@ unless_enforce do
   Spectator.describe CrI18n::LabelChecker do
     let(dir) { "the_directory" }
     let(line_number) { "4" }
+    # TODO: implement tests for this
+    let(pluralized_locales) { [] of String }
 
     def checker(visitors, labels = labels, enforce_parity = false, dir = dir)
-      CrI18n::LabelChecker.new(labels, visitors, enforce_parity, dir)
+      CrI18n::LabelChecker.new(labels, visitors, pluralized_locales, enforce_parity, dir)
     end
 
     context "with basic checks" do
