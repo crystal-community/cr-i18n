@@ -90,7 +90,7 @@ unless_enforce do
           labels = CrI18n.load_labels("./spec/discrepency_specs/missing_label_in_en-us")
           expect(checker(["label:filename:4:false::literal", "extra:filename:4:false::literal"] of String,
             labels: labels,
-            enforce_parity: true).perform_check).to eq ["Locale 'en-us' is missing non-plural label 'label' defined in root labels"] of String
+            enforce_parity: true).perform_check).to eq ["Language 'en' is missing non-plural label 'label' defined in root labels", "Locale 'en-us' is missing non-plural label 'label' defined in root labels"] of String
         end
       end
     end

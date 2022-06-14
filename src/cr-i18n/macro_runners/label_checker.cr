@@ -173,11 +173,9 @@ module CrI18n
         lang_plural, lang_non_plural = partition_label_keys(@labels.language_labels[lang].keys)
         locales.each do |locale, labels|
           locale_plural, locale_non_plural = partition_label_keys(labels.keys)
-          locale_plural = (locale_plural + lang_plural).uniq!
-          locale_non_plural = (locale_non_plural + lang_non_plural).uniq!
 
           # compare non-plural labels for parity
-          (root_non_plural - locale_non_plural).each do |missing_from_locale|
+          (root_non_plural - locale_non_plural - lang_non_plural).each do |missing_from_locale|
             @results << "Locale '#{lang}-#{locale}' is missing non-plural label '#{missing_from_locale}' defined in root labels"
           end
 
@@ -186,7 +184,7 @@ module CrI18n
           end
 
           # Now compare plural labels
-          (root_plural - locale_plural).each do |missing_from_locale|
+          (root_plural - locale_plural - lang_plural).each do |missing_from_locale|
             @results << "Locale '#{lang}-#{locale}' is missing plural label '#{missing_from_locale}' defined in root labels"
           end
 
