@@ -1,2 +1,2 @@
 [home](/cr-i18n/)
-[other](/other.html)
+[other](/cr-i18n/other.html)
