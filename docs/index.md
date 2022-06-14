@@ -2,6 +2,7 @@
 
 ## Welcome to GitHub Pages
 
+Updated.
 
 You can use the [editor on GitHub](https://github.com/Vici37/cr-i18n/edit/master/docs/index.md) to maintain and preview the content for your website in Markdown files.
 
