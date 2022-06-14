@@ -1,3 +1,7 @@
+cri18n:
+  formatters:
+    missing:
+      type: doesnotexist
 nonplural_label: exists
 plural_label:
   one: yes string

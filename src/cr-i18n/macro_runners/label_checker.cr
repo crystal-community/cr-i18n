@@ -7,7 +7,12 @@ module CrI18n
   class LabelChecker
     getter target
 
-    def initialize(@labels : Labels, @visited_labels : Array(String), @pluralized_locales : Array(String), @enforce_parity : Bool, @directory : String)
+    def initialize(@labels : Labels,
+                   @visited_labels : Array(String),
+                   @pluralized_locales : Array(String),
+                   @formatter_types : Array(String),
+                   @enforce_parity : Bool,
+                   @directory : String)
       @results = [] of String
       @checked = false
       @target = "UNKNOWN"
@@ -159,6 +164,7 @@ module CrI18n
         end
       end
 
+      # TODO: locales can miss labels if their parent language contains it
       # Check that locale labels match root
       @labels.locale_labels.each do |lang, locales|
         locales.each do |locale, labels|
@@ -200,6 +206,14 @@ module CrI18n
       end
     end
 
+    def check_formatters
+      formatter_types = @labels.root_labels.keys.select(&.match(/^cri18n\.formatters\.[a-zA-Z0-9]+\.type$/)).map(&.split(".")[2])
+      formatter_types.each do |name|
+        type = @labels.root_labels["cri18n.formatters.#{name}.type"]
+        @results << "No formatter for 'cri18n.formatters.#{name}' using type '#{type}' found (supported types are #{@formatter_types.join(", ")})" unless @formatter_types.includes?(type)
+      end
+    end
+
     def perform_check
       return @results if @checked
 
@@ -213,15 +227,17 @@ module CrI18n
         check_label_existence
       end
 
-      # Check that we have pluralization support for all discovered locales
-      (@labels.supported_locales - @pluralized_locales.uniq).each do |unpluralized_locale|
-        @results << "Locale '#{unpluralized_locale}' doesn't have a plural rule that supports it"
+      if @enforce_parity
+        # Check that we have pluralization support for all discovered locales
+        (@labels.supported_locales - @pluralized_locales.uniq).each do |unpluralized_locale|
+          @results << "#{unpluralized_locale.includes?("-") ? "Locale" : "Language"} '#{unpluralized_locale}' doesn't have a plural rule that supports it"
+        end
+
+        # Perform the label parity check
+        label_discrepencies
       end
 
-      # TODO: ensure we have formatters for all formatter labels
-
-      # Perform the label parity check if applicable
-      label_discrepencies if @enforce_parity
+      check_formatters
 
       unverified_root_label_keys = (@labels.root_labels.keys - @verified_root_label_keys)
       # Cleanup unverified so that any verified plural labels accounts for all plural labels

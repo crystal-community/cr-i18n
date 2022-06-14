@@ -5,37 +5,48 @@ module CrI18n
 
   class FormatterManager
     macro finished
-    {% begin %}
-      {% for f in Formatter.subclasses %}
-        {% raise "Type #{f} needs to define the constant TYPE as a string representing the name of the parameter it formats for" unless f.constant("TYPE") %}
-        @@{{f.id.underscore}} : {{f}} = {{f}}.new
-      {% end %}
-
-      {% types_formatters = {} of Nil => Nil %}
-      {% for f in Formatter.subclasses %}
-      {% types_formatters[f.ancestors[0].type_vars[0].id] = (types_formatters[f.constant("TYPE")] || [] of Nil) + [f] %}
-      {% end %}
-
-      # Break up the list of formatters by their type, let the compiler handle the type inference and calling the correct format method
-      {% for type, formatters in types_formatters %}
-      def self.format(type, format, value : {{type}})
-        {% begin %}
-        case type
-        {% for f in formatters %}
-        when {{f.constant("TYPE")}} then @@{{f.id.underscore}}.format(format, value)
+      macro finished
+      {% begin %}
+        {% for f in Formatter.subclasses %}
+          {% raise "Type #{f} needs to define the constant TYPE as a string representing the name of the parameter it formats for" unless f.constant("TYPE") %}
+          @@{{f.id.underscore}} : {{f}} = {{f}}.new
         {% end %}
-        else value
+
+        {% types_formatters = {} of Nil => Nil %}
+        {% for f in Formatter.subclasses %}
+        {% types_formatters[f.ancestors[0].type_vars[0].id] = (types_formatters[f.constant("TYPE")] || [] of Nil) + [f] %}
+        {% end %}
+
+        # Break up the list of formatters by their type, let the compiler handle the type inference and calling the correct format method
+        {% for type, formatters in types_formatters %}
+        def self.format(type, format, value : {{type}})
+          {% begin %}
+          case type
+          {% for f in formatters %}
+          when {{f.constant("TYPE")}} then @@{{f.id.underscore}}.format(format, value)
+          {% end %}
+          else value
+          end
+          {% end %}
         end
         {% end %}
-      end
       {% end %}
-    {% end %}
-    end
+      end
 
-    # For formatter parameters that don't actually have a formatter
-    def self.format(type, format, value)
-      # TODO: add check to label checker that all formatted params have a formatter too
-      value
+      {% begin %}
+        FORMATTER_EXPECTED_TYPE = {
+          {% for f in Formatter.subclasses %}
+          {{f.constant("TYPE")}} => "{{f.ancestors[0].type_vars[0].id}}",
+          {% end %}
+        } of String => String
+      {% end %}
+
+      # For formatter parameters that don't actually have a formatter
+      def self.format(type, format, value)
+        raise "For formatter for type '#{type}', expected value to be a #{FORMATTER_EXPECTED_TYPE[type]?}, but received a #{value.class} instead" if FORMATTER_EXPECTED_TYPE[type]? && FORMATTER_EXPECTED_TYPE[type] == value.class.to_s
+        # TODO: add check to label checker that all formatted params have a formatter too
+        value
+      end
     end
   end
 end

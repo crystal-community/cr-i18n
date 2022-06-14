@@ -7,10 +7,12 @@ unless_enforce do
     let(dir) { "the_directory" }
     let(line_number) { "4" }
     # TODO: implement tests for this
-    let(pluralized_locales) { [] of String }
+    let(pluralized_locales) { ["en", "en-us"] of String }
+    # TODO: specs for these too
+    let(formatter_types) { [] of String }
 
     def checker(visitors, labels = labels, enforce_parity = false, dir = dir)
-      CrI18n::LabelChecker.new(labels, visitors, pluralized_locales, enforce_parity, dir)
+      CrI18n::LabelChecker.new(labels, visitors, pluralized_locales, formatter_types, enforce_parity, dir)
     end
 
     context "with basic checks" do
@@ -65,7 +67,7 @@ unless_enforce do
     end
 
     context "with label parity" do
-      context "when checking languages" do
+      context "when checki]ng languages" do
         it "checks for extra labels in language" do
           labels = CrI18n.load_labels("./spec/discrepency_specs/extra_label_in_en")
           expect(checker(["label:filename:4:false::literal"] of String, labels: labels, enforce_parity: true).perform_check).to eq ["Language 'en' has extra non-plural label 'nope' not found in root labels"]

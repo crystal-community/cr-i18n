@@ -10,9 +10,10 @@ directory = ARGV[0]
 enforce_parity = ARGV[1] == "true"
 visited_labels = ARGV[2].split(";")
 pluralized_locales = ARGV[3].split(",")
+formatted_types = ARGV[4].split(",")
 
 labels = CrI18n.load_labels(directory)
 
-checker = CrI18n::LabelChecker.new(labels, visited_labels, pluralized_locales, enforce_parity, directory)
+checker = CrI18n::LabelChecker.new(labels, visited_labels, pluralized_locales, formatted_types, enforce_parity, directory)
 
 puts "#{checker.perform_check} of String"

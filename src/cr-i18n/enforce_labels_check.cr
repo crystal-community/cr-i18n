@@ -6,7 +6,8 @@ module CrI18n
                    CrI18n::LABEL_DIRECTORY[0],
                    flag?(:enforce_label_parity),
                    CrI18n::VISITED_LABELS.join(";"),
-                   CrI18n::Pluralization::PluralRule.subclasses.map(&.constant("LOCALES").join(",")).join(",").split(",").sort.join(",")
+                   CrI18n::Pluralization::PluralRule.subclasses.map(&.constant("LOCALES").join(",")).join(",").split(",").sort.join(","),
+                   CrI18n::Formatter.subclasses.map(&.constant("TYPE")).join(",")
                  )}}
       raise "Found errors in compiled labels under #{CrI18n::LABEL_DIRECTORY[0]}:\n\n#{errors.join("\n").id}" unless errors.empty?
     %}
