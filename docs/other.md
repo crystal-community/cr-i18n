@@ -1,4 +1,4 @@
-{% include_relative table_of_contests.md %}
+{% include_relative table_of_contents.md %}
 
 # This is a test
 Did it work?
