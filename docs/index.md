@@ -1,4 +1,7 @@
+{% include_relative table_of_contests.md %}
+
 ## Welcome to GitHub Pages
+
 
 You can use the [editor on GitHub](https://github.com/Vici37/cr-i18n/edit/master/docs/index.md) to maintain and preview the content for your website in Markdown files.
 
