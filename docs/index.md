@@ -1,41 +1,61 @@
 {% include_relative table_of_contents.md %}
 
-## Welcome to GitHub Pages
+# Crystal Internationalization
 
-Updated.
+The `cri18n` shard provides an all inclusive library for developing internationalized crystal applications, taking advantage of crystal's macro language to help streamline development and deployment to provide confidence in the quality of your service.
 
-You can use the [editor on GitHub](https://github.com/Vici37/cr-i18n/edit/master/docs/index.md) to maintain and preview the content for your website in Markdown files.
+Now that that boilerplate is out of the way....
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## Installation
 
-### Markdown
+Add to your `shards.yml` file
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```yaml
+dependencies:
+  cr-i18n:
+    github: vici37/cr-i18n
 ```
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
+and run `> shards install`
 
-### Jekyll Themes
+## Usage
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/Vici37/cr-i18n/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+### Label Files
+Label files can be written as yaml or json files, and all files in the same directory are considered part of the same language / locale. A typical label directory layout could be something like:
 
-### Support or Contact
+```
+labels
+├── root.yml
+└── en
+    ├── en.yml
+    └── us
+        └── us.yml
+```
+The `root.yml` file is intended to be populated by developers and represent the first place where labels exist. Labels are then split into Languages (e.g. `en`) and Locales (e.g. `us`), found in the directory name. The names of files in these directories don't matter, and the directory name is case sensitive (i.e. `labels/en/us` corresponds to the locale `en-us`, which is _different_ from `lables/en/Us` which corresponds to `en-Us`).
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+Labels within label files can be organized and named anyway that makes sense. For example, a `root.yml` could contain:
+
+```yaml
+user_page:
+  username: Username
+  email: Email
+  given_name: First Name
+  surname: Last Name
+  greetings: Hello, %{name}!
+```
+
+### Using in Crystal
+
+```crystal
+require "cr-i18n"
+
+CrI18n.compiler_load_labels("./path/to/labels")
+```
+
+And then throughout your application code, use the top level `label` macro for whenever you have a string that will be displayed to the user:
+```crystal
+label(user_page.username) # => "Username"
+label(user_page.greeting, name: "Troy") # => "Hello, Troy!"
+```
+
+From here, check out the [development](/cr-i18n/development.html) page for more details on how `cr-i18n` can help you build faster without worrying if you forgot a label somewhere or not.

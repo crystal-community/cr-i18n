@@ -273,9 +273,8 @@ end
 [x] Have compiler checks for label existence
 [x] Have compiler checks for label parity between locales and languages
 [x] Support setting context locale
-[] Support numerical localization
-[] Support date format localization
-[] Support replacing / setting root locale with a specific locale
+[x] Support numerical localization
+[x] Support date format localization
 [] Convert labels to structs at compile time for quicker label look up (inspired by rosetta)
 
 ## Contributors
