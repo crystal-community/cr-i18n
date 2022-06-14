@@ -153,7 +153,6 @@ module CrI18n
     end
 
     private def format_label(label, language, locale, count, **splat)
-      # TODO: forbid `count` as a formatted param
       label = label.gsub("%{count}", count)
       splat.each_with_index do |name, val|
         if format_type = get_label?("cri18n.formatters.#{name}.type", language, locale)

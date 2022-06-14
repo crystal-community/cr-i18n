@@ -5,3 +5,4 @@ plural_label:
   other: no string
 invalid_plural:
   one: yes string
+unused_label: unused still

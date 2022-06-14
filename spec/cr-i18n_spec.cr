@@ -133,6 +133,8 @@ Spectator.describe "Label loader" do
         label(nonplural_label)
         var = "erpol"
         label("int.#{var}.ated")
+        label(label_with_params, three_param: "no")
+        label(label_without_params, three_param: "no")
         # TEST: Check that non-existent labels throw compiler errors
         expect(label(does.not.exist)).to eq "does.not.exist"
         # TEST: Check that if a 'count' param is specified, that the label must be plural

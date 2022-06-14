@@ -44,7 +44,6 @@ module CrI18n
       # For formatter parameters that don't actually have a formatter
       def self.format(type, format, value)
         raise "For formatter for type '#{type}', expected value to be a #{FORMATTER_EXPECTED_TYPE[type]?}, but received a #{value.class} instead" if FORMATTER_EXPECTED_TYPE[type]? && FORMATTER_EXPECTED_TYPE[type] == value.class.to_s
-        # TODO: add check to label checker that all formatted params have a formatter too
         value
       end
     end

@@ -2,6 +2,8 @@ cri18n:
   formatters:
     missing:
       type: doesnotexist
+    count:
+      type: stilldoesnotexist
 nonplural_label: exists
 plural_label:
   one: yes string
@@ -10,6 +12,7 @@ invalid_plural:
   one: yes string
 unused_label: unused
 label_with_params: This label has %{one_param} and %{two_param}
+label_without_params: This label has no params
 int:
   erpol:
     ated: interpolated

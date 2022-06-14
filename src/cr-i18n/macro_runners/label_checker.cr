@@ -88,13 +88,16 @@ module CrI18n
     end
 
     def ensure_param_consistency
-      return unless (expected_params = (find_params_from_label || [] of String)) || params.size > 0
+      expected_params = find_params_from_label
+      return if params.empty? && !expected_params
+      return if params == expected_params
+      expected_params ||= [] of String
 
       missing_params = (expected_params - params)
       extra_params = (params - expected_params)
 
-      error("is missing parameters '#{missing_params.join("', '")}' (expecting #{expected_params.join(", ")})") unless missing_params.empty?
-      error("has unexpected parameters '#{extra_params.join("', '")}' (expecting #{expected_params.join(", ")})") unless extra_params.empty?
+      error("is missing parameters '#{missing_params.join("', '")}' #{expected_params.empty? ? "" : "(expecting #{expected_params.join(", ")})"}") unless missing_params.empty?
+      error("has unexpected parameters '#{extra_params.join("', '")}' #{expected_params.empty? ? "" : "(expecting #{expected_params.join(", ")})"}") unless extra_params.empty?
     end
 
     def check_label_existence
@@ -164,11 +167,14 @@ module CrI18n
         end
       end
 
-      # TODO: locales can miss labels if their parent language contains it
       # Check that locale labels match root
       @labels.locale_labels.each do |lang, locales|
+        # Locales can be missing labels as long as their parent language also has them
+        lang_plural, lang_non_plural = partition_label_keys(@labels.language_labels[lang].keys)
         locales.each do |locale, labels|
           locale_plural, locale_non_plural = partition_label_keys(labels.keys)
+          locale_plural = (locale_plural + lang_plural).uniq!
+          locale_non_plural = (locale_non_plural + lang_non_plural).uniq!
 
           # compare non-plural labels for parity
           (root_non_plural - locale_non_plural).each do |missing_from_locale|
@@ -188,7 +194,6 @@ module CrI18n
             @results << "Locale '#{lang}-#{locale}' has extra plural label '#{extra_locale_label}' not found in root labels"
           end
 
-          # TODO: check labels have matching paramaters
           root_non_plural.each do |label_key|
             if locale_label = labels[label_key]?
               root_label = @labels.root_labels[label_key]
@@ -209,8 +214,12 @@ module CrI18n
     def check_formatters
       formatter_types = @labels.root_labels.keys.select(&.match(/^cri18n\.formatters\.[a-zA-Z0-9]+\.type$/)).map(&.split(".")[2])
       formatter_types.each do |name|
-        type = @labels.root_labels["cri18n.formatters.#{name}.type"]
-        @results << "No formatter for 'cri18n.formatters.#{name}' using type '#{type}' found (supported types are #{@formatter_types.join(", ")})" unless @formatter_types.includes?(type)
+        if name == "count"
+          @results << "Parameter `count` is used for plural labels and can't be assigned a formatter"
+        else
+          type = @labels.root_labels["cri18n.formatters.#{name}.type"]
+          @results << "No formatter for 'cri18n.formatters.#{name}' using type '#{type}' found (supported types are #{@formatter_types.join(", ")})" unless @formatter_types.includes?(type)
+        end
       end
     end
 
