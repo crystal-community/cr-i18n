@@ -26,6 +26,14 @@ module CrI18n
     end
   end
 
+  def self.resolve_to_root=(value : Bool)
+    @@instance.resolve_to_root = value
+  end
+
+  def self.resolve_to_root
+    @@instance.resolve_to_root
+  end
+
   def self.current_locale
     @@instance.current_locale
   end

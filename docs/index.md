@@ -1,5 +1,3 @@
-{% include_relative table_of_contents.md %}
-
 # Crystal Internationalization
 
 The `cri18n` shard provides an all inclusive library for developing internationalized crystal applications, taking advantage of crystal's macro language to help streamline development and deployment to provide confidence in the quality of your service.

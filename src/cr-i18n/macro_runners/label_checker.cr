@@ -74,7 +74,7 @@ module CrI18n
     end
 
     def error(msg)
-      @results << "Label '#{target}' at #{location} #{msg}"
+      @results << "Missing label '#{target}' at #{location} #{msg}"
     end
 
     def ensure_plural_use
@@ -93,7 +93,8 @@ module CrI18n
       return if params == expected_params
       expected_params ||= [] of String
 
-      missing_params = (expected_params - params)
+      # We ignore the `count` param as it likely won't show up in "one" labels
+      missing_params = (expected_params - params - ["count"])
       extra_params = (params - expected_params)
 
       error("is missing parameters '#{missing_params.join("', '")}' #{expected_params.empty? ? "" : "(expecting #{expected_params.join(", ")})"}") unless missing_params.empty?
