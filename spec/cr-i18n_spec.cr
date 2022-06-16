@@ -22,6 +22,16 @@ Spectator.describe "Label loader" do
       expect(labels.get_label("section.nested_section.something", "en-Us")).to eq "yet another label in root"
     end
 
+    it "provides test labels" do
+      labels = CrI18n.load_labels("./spec/spec1")
+      CrI18n.running_tests = true
+
+      expect(labels.get_label("sections.nested_section.something")).to eq("sections.nested_section.something")
+      expect(labels.get_label("parameters", name: "Dog", object: "Log")).to eq "parameters name='Dog' object='Log'"
+    ensure
+      CrI18n.running_tests = false
+    end
+
     it "records missing labels" do
       labels = CrI18n.load_labels("./spec/spec1")
 

@@ -28,7 +28,7 @@ unless_enforce do
       end
 
       it "raises errors for non-existent labels" do
-        expect(checker(["labels.does.not.exist:filename:4:false::literal", "labels.exists:filename:4:false::literal"]).perform_check).to eq ["Label 'labels.does.not.exist' at filename:4 wasn't found in labels loaded from the_directory"]
+        expect(checker(["labels.does.not.exist:filename:4:false::literal", "labels.exists:filename:4:false::literal"]).perform_check).to eq ["Missing label 'labels.does.not.exist' at filename:4 wasn't found in labels loaded from the_directory"]
       end
 
       it "raises errors for non-plural label being used as plural" do

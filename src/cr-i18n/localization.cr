@@ -38,6 +38,14 @@ module CrI18n
     @@instance.current_locale
   end
 
+  def self.running_tests
+    @@instance.running_tests
+  end
+
+  def self.running_tests=(value : Bool)
+    @@instance.running_tests = value
+  end
+
   def self.supported_locales
     @@instance.supported_locales
   end
@@ -79,6 +87,7 @@ module CrI18n
   class Labels
     property root_locale = ""
     property resolve_to_root = true
+    property running_tests = false
     getter supported_locales
 
     @root_labels = {} of String => String
@@ -183,7 +192,17 @@ module CrI18n
       get_label?(target, language, locale) || target
     end
 
+    private def test_label(target, count, **splat)
+      String.build do |bob|
+        bob << "#{target}" unless target.empty?
+        bob << " " if count || splat.size > 0
+        bob << "count=#{count}" if count
+        bob << splat.map { |name, value| "#{name}='#{value}'" }.join(" ") if splat.size > 0
+      end
+    end
+
     def get_label(target : String = "", locale : String = "", *, count : (Float | Int)? = nil, **splat)
+      return test_label(target, count, **splat) if running_tests
       language, locale = lang_locale(locale)
 
       if target != ""

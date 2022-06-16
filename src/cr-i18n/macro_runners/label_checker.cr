@@ -73,8 +73,8 @@ module CrI18n
       @verified_root_label_keys.uniq!
     end
 
-    def error(msg)
-      @results << "Missing label '#{target}' at #{location} #{msg}"
+    def error(msg, missing = false)
+      @results << "#{missing ? "Missing l" : "L"}abel '#{target}' at #{location} #{msg}"
     end
 
     def ensure_plural_use
@@ -102,7 +102,7 @@ module CrI18n
     end
 
     def check_label_existence
-      error("wasn't found in labels loaded from #{@directory}") unless resolve_target_to_existing_label_target
+      error("wasn't found in labels loaded from #{@directory}", missing: true) unless resolve_target_to_existing_label_target
     end
 
     def partition_label_keys(keys)

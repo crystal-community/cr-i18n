@@ -34,6 +34,23 @@ label(some.label.path) # Search in "en-Us", then "en"
 
 If a label target doesn't exist, it will record that label as missing and then return the passed in label target as is (such as a String, verbatim). To get a list of all labels that are missing and not using the compiler flag to check for them, you can check them via `CrI18n.missed`.
 
+# Writing and Running Tests
+
+Chances are you'll want to verify that content is appearing as it's intended to users, and labels will be a part of that. Since labels can change for any number of reasons, and translation often doesn't occur until _after_ feature development is complete, `cr-i18n` has a `running_tests` mode that changes how labels are resolved.
+
+```crystal
+Spec.before_suite do
+  CrI18n.running_tests = true
+end
+
+...
+it "renders correctly"
+  # While running_tests is true, label resolving will be consistent regardless of what labels are loaded, making
+  # for less brittle test writing
+  label(my.label.target, parma1: "with params").should eq "my.label.target param1='with params'"
+end
+```
+
 # After Feature Development Completes
 
 After the feature is complete, it's time to transfer all of these labels to a proper `root.yml` (or adjacent) file. You can structure these files however you want. To discover all `label` invocations that don't use valid label path, you can build your application with the `-Denforce_labels` flag:
@@ -49,7 +66,7 @@ Showing last frame. Use --error-trace for full trace.
 
 In src/cr-i18n/enforce_labels_check.cr:3:5
 
- 3 | {% begin %}
+{% raw %} 3 | {% begin %}{% endraw %}
      ^
 Error: Found errors in compiled labels under "./src":
 

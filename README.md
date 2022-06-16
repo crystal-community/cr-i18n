@@ -7,7 +7,7 @@ is more streamlined.
 
 Lots of inspiration is taken from [crystal-i18n/i18n](https://crystal-i18n.github.io/) as well as [BrucePerens/internationalize](https://github.com/BrucePerens/internationalize).
 
-Take a look at the [full documentation](vici37.github.io/cr-i18n/).
+Take a look at the [full documentation](https://Vici37.github.io/cr-i18n/).
 
 ## Installation
 

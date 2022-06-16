@@ -20,7 +20,7 @@ end
 class TestTimeFormatter < CrI18n::Formatter(Time)
   TYPE = "time_formatter"
 
-  def format(format, value) : String
+  def format(format : String?, value : Time) : String
     value.to_s(format.not_nil!)
   end
 end

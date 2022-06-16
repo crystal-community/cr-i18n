@@ -3,10 +3,6 @@ module CrI18n
   class Pluralization
     abstract class PluralRule
       abstract def apply(count : Float | Int) : String
-
-      def for_locale : Array(String)
-        [] of String
-      end
     end
 
     @@locale_rules = {} of String => PluralRule
@@ -20,19 +16,21 @@ module CrI18n
       @@locale_rules[locale] = rule
     end
 
-    def self.auto_register_rules
-      @@locale_rules.clear
+    macro finished
+      def self.auto_register_rules
+        @@locale_rules.clear
 
-      {% for rule in Pluralization::PluralRule.subclasses %}
-      rule = {{rule}}.new
+        {% for rule in Pluralization::PluralRule.subclasses %}
+        rule = {{rule}}.new
 
-      {% raise "Pluralization rule #{rule} is missing the LOCALES constant and can't be auto registered; please define the LOCALES constant for this rule as an array of support locales (e.g. LOCALES = [\"en\", \"en-us\"])" unless rule.constants.includes?("LOCALES".id) %}
-      locale = {{rule}}::LOCALES
+        {% raise "Pluralization rule #{rule} is missing the LOCALES constant and can't be auto registered; please define the LOCALES constant for this rule as an array of support locales (e.g. LOCALES = [\"en\", \"en-us\"])" unless rule.constants.includes?("LOCALES".id) %}
+        locale = {{rule}}::LOCALES
 
-      locale.each do |loc|
-        Pluralization.register_locale(loc, rule)
+        locale.each do |loc|
+          Pluralization.register_locale(loc, rule)
+        end
+        {% end %}
       end
-      {% end %}
     end
 
     def self.pluralize(count : Float | Int, language : String, locale : String) : String?
