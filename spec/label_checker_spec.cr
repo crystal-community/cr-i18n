@@ -64,6 +64,10 @@ unless_enforce do
       it "raises no errors when all parameters are used correctly" do
         expect(checker(["labels.exists:filename:4:false:name,location:literal"]).perform_check).to eq [] of String
       end
+
+      it "ignores parameters for labels that don't exist" do
+        expect(checker(["labels.not.exists:filename:4:false:param:literal", "labels.exists:filename:4:false:name,location:literal"]).perform_check).to eq ["Missing label 'labels.not.exists' at filename:4 wasn't found in labels loaded from the_directory"]
+      end
     end
 
     context "with label parity" do

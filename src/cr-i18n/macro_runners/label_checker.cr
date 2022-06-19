@@ -88,6 +88,7 @@ module CrI18n
     end
 
     def ensure_param_consistency
+      return unless resolve_target_to_existing_label_target
       expected_params = find_params_from_label
       return if params.empty? && !expected_params
       return if params == expected_params
