@@ -51,6 +51,26 @@ Spectator.describe "Label loader" do
       expect(label("parameters", name: "Tom", object: "log")).to eq "Tom jumped over the log"
     end
 
+    it "resolves aliases" do
+      labels = CrI18n.load_labels("./spec/spec1")
+      expect(labels.get_label("alias.basic")).to eq "This label uses an alias label in root"
+    end
+
+    it "resolves aliases with parameters" do
+      labels = CrI18n.load_labels("./spec/spec1")
+      expect(labels.get_label("alias.params", my_param: "Hello", name: "Dog", object: "log")).to eq "This label uses params Hello Dog jumped over the log"
+    end
+
+    it "resolves aliases that are plural" do
+      labels = CrI18n.load_labels("./spec/spec1")
+      expect(labels.get_label("alias.plural", count: 0)).to eq "This label is plural label in root"
+    end
+
+    it "resolves nested aliases" do
+      labels = CrI18n.load_labels("./spec/spec1")
+      expect(labels.get_label("alias.nested")).to eq "This label refers to basic This label uses an alias label in root"
+    end
+
     it "supports setting language and locale context" do
       labels = CrI18n.load_labels("./spec/spec1")
       labels.with_locale("en") do

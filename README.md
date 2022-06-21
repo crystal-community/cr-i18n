@@ -277,6 +277,8 @@ end
 [x] Support setting context locale
 [x] Support numerical localization
 [x] Support date format localization
+[x] Support label aliases
+[] Intelligent label casing, for parameters and aliases
 [] Convert labels to structs at compile time for quicker label look up (inspired by rosetta)
 
 ## Contributors

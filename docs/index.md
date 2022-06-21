@@ -36,6 +36,7 @@ Labels within label files can be organized and named anyway that makes sense. Fo
 ```yaml
 user_page:
   username: Username
+  un_alias: "%(username): %{name}"
   email: Email
   given_name: First Name
   surname: Last Name
@@ -54,6 +55,7 @@ And then throughout your application code, use the top level `label` macro for w
 ```crystal
 label(user_page.username) # => "Username"
 label(user_page.greeting, name: "Troy") # => "Hello, Troy!"
+label(user_page.un_alias, name: "tsornson") # => "Username: tsornson"
 ```
 
 From here, check out the [development](/cr-i18n/development.html) page for more details on how `cr-i18n` can help you build faster without worrying if you forgot a label somewhere or not.

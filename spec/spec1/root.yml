@@ -4,3 +4,9 @@ section:
   nested_section:
     something: yet another label in root
 parameters: "%{name} jumped over the %{object}"
+alias:
+  basic: This label uses an alias %(label)
+  params: This label uses params %{my_param} %(parameters)
+  plural:
+    other: This label is plural %(label)
+  nested: This label refers to basic %(alias.basic)

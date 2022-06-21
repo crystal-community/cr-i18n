@@ -178,12 +178,20 @@ module CrI18n
         end
         label = label.gsub("%{#{name}}", val)
       end
+
+      locale = "#{language.empty? ? "" : language}#{locale.empty? ? "" : "-#{locale}"}"
+      label.scan(/%\(([^\)]+)\)/).each do |match_data|
+        alias_target = match_data[1]
+        alias_label = get_label(alias_target, locale, **splat, count: count)
+        label = label.gsub("%(#{alias_target})", alias_label)
+      end
+
       label
     end
 
     private def resolve_plural_label(target, count, language, locale)
       if plural = Pluralization.pluralize(count, language, locale)
-        return get_label?("#{target}.#{plural}", language, locale) || target
+        return resolve_non_plural_label("#{target}.#{plural}", language, locale)
       end
       target
     end
@@ -206,7 +214,7 @@ module CrI18n
       language, locale = lang_locale(locale)
 
       if target != ""
-        label = count ? resolve_plural_label(target, count, language, locale) : resolve_non_plural_label(target, language, locale)
+        label = (count && @root_labels.has_key?("#{target}.other") ? resolve_plural_label(target, count, language, locale) : resolve_non_plural_label(target, language, locale))
       elsif splat.size == 1 && (key = splat.keys[0]?)
         label = "%{#{key}}"
       else
