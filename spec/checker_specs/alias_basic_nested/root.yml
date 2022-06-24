@@ -1,0 +1,5 @@
+label: this is a label
+aliases:
+  basic: refers to label %(label)
+  nested: refers to aliases.basic %(aliases.basic)
+  nope: refers to an alias that doesn't exist %(labels.nope)

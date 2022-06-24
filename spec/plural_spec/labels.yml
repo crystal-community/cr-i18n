@@ -4,4 +4,6 @@ label:
   other: No idea what this is
 new_label:
   other: The other one
+label_with_count:
+  other: This label uses count %{count}
 nonplural_label: This is not plural

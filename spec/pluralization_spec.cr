@@ -70,5 +70,11 @@ unless_enforce do
         end
       end
     end
+
+    it "allows count as a parameter" do
+      CrI18n.load_labels("./spec/plural_spec")
+
+      expect(CrI18n.get_label("label_with_count", count: 37)).to eq "This label uses count 37"
+    end
   end
 end

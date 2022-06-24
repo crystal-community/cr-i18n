@@ -1,0 +1,11 @@
+label:
+  other: this is a basic plural label
+nonplural_label: this label isn't plural
+aliases:
+  nonplural_alias: this alias refers to label %(label)
+  plural_alias:
+    other: this alias refers to nonplural_label %(nonplural_label)
+  plural_alias_with_plural_label:
+    other: this alias also refers to label %(label)
+  plural_alias_with_params:
+    other: this alias has param1 %{param1} and refers to nonplural_label %(nonplural_label)

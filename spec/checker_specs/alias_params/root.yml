@@ -1,0 +1,6 @@
+label: this is a label
+label_with_params: This label uses param1 %{param1}
+aliases:
+  alias_alongside_param: this has a param %{param} and alias %(label)
+  alias_to_param: this alias refers to label_with_params %(label_with_params)
+  alias_with_params: this alias uses param2 %{param2} and refers to alias_to_param %(aliases.alias_to_param)

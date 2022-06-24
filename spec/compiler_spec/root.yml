@@ -16,3 +16,13 @@ label_without_params: This label has no params
 int:
   erpol:
     ated: interpolated
+aliases:
+  basic: This label refers to nonplural_label %(nonplural_label)
+  nested: This label refers to aliases.basic %(aliases.basic)
+  nested_with_params: This label refers to aliases.params %(aliases.params)
+  params: This label refers to parameter label %(label_with_params)
+  plural: This label refers to plural_label %(plural_label)
+  plural_alias_with_plural:
+    other: This label is plural and refers to plural_label %(plural_label)
+  plural_alias_without_plural:
+    other: This label is plural and refers to nonplural_label %(nonplural_label)

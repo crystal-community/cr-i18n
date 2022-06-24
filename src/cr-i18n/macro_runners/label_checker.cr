@@ -25,24 +25,35 @@ module CrI18n
       @verified_root_label_keys = [] of String
     end
 
-    def resolve_target_to_existing_label_target
-      @labels.root_labels.keys.find(&.match(regex_for_target))
+    def resolve_target_to_existing_label_target(subject = target)
+      @labels.root_labels.keys.find(&.match(regex_for_target(subject)))
     end
 
-    def regex_for_target
-      /^#{target.gsub(/\./, "\\.").gsub(/#\{.*?\}/, ".*")}(\.other)?$/
+    def regex_for_target(subject : String = target)
+      /^#{subject.gsub(/\./, "\\.").gsub(/#\{.*?\}/, ".*")}(\.other)?$/
     end
 
     def find_params_from_label
-      return nil unless real_target = resolve_target_to_existing_label_target
+      all_targets = resolve_aliases
+      return [] of NamedTuple(alias_path: Array(String), params: Array(String)) if all_targets.empty?
 
-      label = @labels.root_labels[real_target]
-      parse_params_from_label(label)
+      all_targets.map do |alias_path|
+        label = @labels.root_labels[alias_path[-1]]
+        {alias_path: alias_path, params: parse_params_from_label(label)}
+      end.reject(&.[:params].nil?).map { |el| {alias_path: el[:alias_path], params: el[:params].not_nil!} }
     end
 
     def parse_params_from_label(label)
-      params = label.scan(/%\{(.*?)\}/).map { |m| m[1] }
-      params.empty? ? nil : params
+      parse_pattern(/%\{(.*?)\}/, label)
+    end
+
+    def parse_aliases_from_label(label)
+      parse_pattern(/%\((.*?)\)/, label)
+    end
+
+    private def parse_pattern(pattern, label)
+      pattern_matches = label.scan(pattern).map { |m| m[1] }
+      pattern_matches.empty? ? nil : pattern_matches.uniq!
     end
 
     def params
@@ -54,8 +65,8 @@ module CrI18n
       @is_plural == "true"
     end
 
-    def is_really_plural?
-      resolve_target_to_existing_label_target.try(&.ends_with?(".other"))
+    def is_really_plural?(subject)
+      subject.ends_with?(".other")
     end
 
     def is_interpolated?
@@ -66,40 +77,103 @@ module CrI18n
       "#{@filename.gsub(/^#{FileUtils.pwd}/, ".")}:#{@line_number}"
     end
 
-    def add_to_verified_root
-      @labels.root_labels.keys.each do |label|
-        @verified_root_label_keys << label if label.match(/^#{target.gsub(/\./, "\\.").gsub(/#\{.*?\}/, ".*")}/)
+    private def resolve_aliases(subject = resolve_target_to_existing_label_target)
+      return [] of Array(String) unless subject
+      queue = [[subject]]
+      queue.each do |current_alias|
+        tar = current_alias[-1].not_nil!
+        label = @labels.root_labels[resolve_target_to_existing_label_target(tar)]
+        if aliases = parse_aliases_from_label(label)
+          aliases.each do |al|
+            if resolved_alias = resolve_target_to_existing_label_target(al)
+              queue << current_alias + [resolved_alias]
+            else
+              error("references alias '#{al}' which isn't a valid label target")
+            end
+          end
+        end
       end
+      queue
+    end
+
+    def add_to_verified_root
+      resolve_aliases.each do |current_target_path|
+        current_target = current_target_path[-1]
+
+        @labels.root_labels.keys.each do |label|
+          # current_target is guaranteed to resolve to a valid target in @labels.root_labels.keys
+          # Regex that gets created should form:
+          # "some.target" => /^some\.target$/
+          # "some.#{interpolated}.target" => /^some\..*\.target$/
+          # "some.plural.target.other" => /^some\.plural\.target\..*$/
+          regex = /^#{current_target.gsub(/\./, "\\.").gsub(/.other$/, "..*").gsub(/#\{.*?\}/, ".*")}$/
+          @verified_root_label_keys << label if label.match(regex)
+        end
+      end
+
       @verified_root_label_keys.uniq!
     end
 
     def error(msg, missing = false)
-      @results << "#{missing ? "Missing l" : "L"}abel '#{target}' at #{location} #{msg}"
+      error_msg = "#{missing ? "Missing l" : "L"}abel '#{target}' at #{location} #{msg}"
+      @results << error_msg unless @results.includes?(error_msg)
     end
 
     def ensure_plural_use
-      if is_plural? && !is_really_plural?
-        error("used the `count` parameter, but this label isn't plural (doesn't have the `other` sub field)")
-      end
+      all_targets = resolve_aliases
+      if all_targets.size == 1
+        if is_plural? && !is_really_plural?(all_targets[0][0])
+          error("used the `count` parameter, but this label isn't plural (doesn't have the `other` sub field)")
+        elsif !is_plural? && is_really_plural?(all_targets[0][0])
+          error("is a plural label (has an `other` sub field), but is missing the `count` parameter")
+        end
+      else
+        any_plural = all_targets.map(&.last).any?(&.ends_with?(".other"))
+        alias_paths = all_targets.map do |path|
+          "#{path.map(&.gsub(/\.other$/, "")).join(" -> ")} #{path[-1].ends_with?(".other") ? "(plural)" : "(not plural)"}"
+        end.join("\n\t")
 
-      if !is_plural? && is_really_plural?
-        error("is a plural label (has an `other` sub field), but is missing the `count` parameter")
+        if is_plural? && !any_plural
+          error("used the `count` parameter, but this label and none of its used aliases are plural (don't have the `other` sub field):\n\t#{alias_paths}")
+        elsif !is_plural? && any_plural
+          error("is a plural label, or references an alias that is plural (has an `other` sub field), but is missing the `count` parameter:\n\t#{alias_paths}")
+        end
       end
     end
 
     def ensure_param_consistency
-      return unless resolve_target_to_existing_label_target
       expected_params = find_params_from_label
-      return if params.empty? && !expected_params
-      return if params == expected_params
-      expected_params ||= [] of String
 
-      # We ignore the `count` param as it likely won't show up in "one" labels
-      missing_params = (expected_params - params - ["count"])
-      extra_params = (params - expected_params)
+      # Nothing to do if we have no params and expected no params
+      return if params.empty? && expected_params.empty?
+      # Nothing to do if the params we have match exactly the params we expected
+      return if params == expected_params.flat_map(&.[:params]).uniq!
 
-      error("is missing parameters '#{missing_params.join("', '")}' #{expected_params.empty? ? "" : "(expecting #{expected_params.join(", ")})"}") unless missing_params.empty?
-      error("has unexpected parameters '#{extra_params.join("', '")}' #{expected_params.empty? ? "" : "(expecting #{expected_params.join(", ")})"}") unless extra_params.empty?
+      if expected_params.empty? || (expected_params.size == 1 && expected_params[0][:alias_path].size == 1)
+        # Base case - we have a label with no params and params were supplied, or we have a label
+        # with params and no aliases, and params were supplied but different than expected
+
+        # We ignore the `count` param as it likely won't show up in "one" labels
+        missing_params = (expected_params[0][:params] - params - ["count"])
+        extra_params = (params - expected_params[0][:params])
+
+        error("is missing parameters '#{missing_params.join("', '")}' #{expected_params.empty? ? "" : "(expecting '#{expected_params[0][:params].join("', '")}')"}") unless missing_params.empty?
+        error("has unexpected parameters '#{extra_params.join("', '")}' #{expected_params.empty? ? "" : "(expecting '#{expected_params[0][:params].join("', '")}')"}") unless extra_params.empty?
+      else
+        # We have a label with aliases that require their own params
+        all_expected_params = expected_params.flat_map(&.[:params]).uniq!
+
+        missing_params = (all_expected_params - params - ["count"])
+        extra_params = (params - all_expected_params)
+
+        alias_param_path_map = "\n\t#{expected_params.map do |e|
+                                        "For #{e[:alias_path].join(" -> ")}, expected '#{e[:params].join("', '")}'"
+                                      end.join("\n\t")}"
+
+        # We already know one of these conditions is true, otherwise we would have exited early at the beginning
+        error("has extra parameters '#{extra_params.join("', '")}':#{alias_param_path_map}") unless extra_params.empty?
+        error("is missing parameters '#{missing_params.join("', '")}':#{alias_param_path_map}") unless missing_params.empty?
+      end
     end
 
     def check_label_existence
@@ -123,8 +197,29 @@ module CrI18n
       return if root_label_params == other_label_params
       missing = root_label_params - other_label_params
       extra = other_label_params - root_label_params
-      @results << "#{prefix} is missing param#{missing.size > 1 ? "s" : ""} #{missing.join(", ")} (expected #{root_label_params.join(", ")})" unless missing.empty?
-      @results << "#{prefix} has unexpected param#{extra.size > 1 ? "s" : ""} #{extra.join(", ")} (expected #{root_label_params.join(", ")})" unless extra.empty?
+      expected = case root_label_params.size
+                 when 0 then " (expected none)"
+                 when 1 then ""
+                 else        " (expected '#{root_label_params.join("', '")}')"
+                 end
+      @results << "#{prefix} is missing param#{missing.size > 1 ? "s" : ""} '#{missing.join("', '")}'#{expected}" unless missing.empty?
+      @results << "#{prefix} has unexpected param#{extra.size > 1 ? "s" : ""} '#{extra.join("', '")}'#{expected}" unless extra.empty?
+    end
+
+    def check_alias_parity(prefix, root_label, other_label)
+      root_label_aliases = parse_aliases_from_label(root_label) || [] of String
+      other_label_aliases = parse_aliases_from_label(other_label) || [] of String
+      return if root_label_aliases.empty? && other_label_aliases.empty?
+      return if root_label_aliases == other_label_aliases
+      missing = root_label_aliases - other_label_aliases
+      extra = other_label_aliases - root_label_aliases
+      expected = case root_label_aliases.size
+                 when 0 then " (expected none)"
+                 when 1 then ""
+                 else        " (expected '#{root_label_aliases.join("', '")}')"
+                 end
+      @results << "#{prefix} is missing alias#{missing.size > 1 ? "es" : ""} '#{missing.join("', '")}'#{expected}" unless missing.empty?
+      @results << "#{prefix} has unexpected alias#{extra.size > 1 ? "es" : ""} '#{extra.join("', '")}'#{expected}" unless extra.empty?
     end
 
     def label_discrepencies
@@ -158,6 +253,7 @@ module CrI18n
           if lang_label = labels[label_key]?
             root_label = @labels.root_labels[label_key]
             check_param_parity("Language '#{lang}'s label '#{label_key}'", root_label, lang_label)
+            check_alias_parity("Language '#{lang}'s label '#{label_key}'", root_label, lang_label)
           end
         end
 
@@ -165,8 +261,11 @@ module CrI18n
           root_label = @labels.root_labels["#{label_key}.other"]
           labels.keys.select(&.starts_with?(label_key)).each do |check_plural_label|
             check_param_parity("Language '#{lang}' plural label '#{check_plural_label}'", root_label, labels[check_plural_label])
+            check_alias_parity("Language '#{lang}' plural label '#{check_plural_label}'", root_label, labels[check_plural_label])
           end
         end
+
+        # TODO: check parity for aliases
       end
 
       # Check that locale labels match root
@@ -198,6 +297,7 @@ module CrI18n
             if locale_label = labels[label_key]?
               root_label = @labels.root_labels[label_key]
               check_param_parity("Locale '#{lang}-#{locale}'s label '#{label_key}'", root_label, locale_label)
+              check_alias_parity("Locale '#{lang}-#{locale}'s label '#{label_key}'", root_label, locale_label)
             end
           end
 
@@ -205,8 +305,11 @@ module CrI18n
             root_label = @labels.root_labels["#{label_key}.other"]
             labels.keys.select(&.starts_with?(label_key)).each do |check_plural_label|
               check_param_parity("Locale '#{lang}-#{locale}' plural label '#{check_plural_label}'", root_label, labels[check_plural_label])
+              check_alias_parity("Locale '#{lang}-#{locale}' plural label '#{check_plural_label}'", root_label, labels[check_plural_label])
             end
           end
+
+          # TODO: check parity for aliases
         end
       end
     end
@@ -230,10 +333,13 @@ module CrI18n
         @target, @filename, @line_number, @is_plural, @params, @interpolated = label_identifier.split(":")
 
         add_to_verified_root
+        check_label_existence
+
+        # No reason to make the other checks if the label doesn't actually exist
+        next unless resolve_target_to_existing_label_target
 
         ensure_plural_use
         ensure_param_consistency
-        check_label_existence
       end
 
       if @enforce_parity
@@ -256,7 +362,7 @@ module CrI18n
       # Cleanup unverified so that plural labels only get complained about once
       unverified_plural, unverified_non_plural = partition_label_keys(unverified_root_label_keys)
 
-      @results << "These labels are defined in #{@directory} but weren't used and can be removed:\n\t#{(unverified_plural + unverified_non_plural).join("\n\t")}" unless unverified_root_label_keys.empty?
+      @results << "These labels are defined in #{@directory} but weren't used and can be removed:\n\t#{(unverified_plural + unverified_non_plural).sort.join("\n\t")}" unless unverified_root_label_keys.empty?
 
       @results.sort!
     end
