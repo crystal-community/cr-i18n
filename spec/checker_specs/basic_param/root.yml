@@ -1,2 +1,3 @@
 labels:
   exists: from %{location}, hello %{name}!
+  no_params: there are no params here

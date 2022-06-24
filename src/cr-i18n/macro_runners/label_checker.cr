@@ -153,9 +153,10 @@ module CrI18n
         # Base case - we have a label with no params and params were supplied, or we have a label
         # with params and no aliases, and params were supplied but different than expected
 
+        exp_par = expected_params.dig?(0, :params) || [] of String
         # We ignore the `count` param as it likely won't show up in "one" labels
-        missing_params = (expected_params[0][:params] - params - ["count"])
-        extra_params = (params - expected_params[0][:params])
+        missing_params = (exp_par - params - ["count"])
+        extra_params = (params - exp_par)
 
         error("is missing parameters '#{missing_params.join("', '")}' #{expected_params.empty? ? "" : "(expecting '#{expected_params[0][:params].join("', '")}')"}") unless missing_params.empty?
         error("has unexpected parameters '#{extra_params.join("', '")}' #{expected_params.empty? ? "" : "(expecting '#{expected_params[0][:params].join("', '")}')"}") unless extra_params.empty?

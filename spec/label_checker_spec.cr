@@ -74,22 +74,34 @@ unless_enforce do
       it "raises error when missing paramater" do
         expect(checker(visitors_for("labels.exists", params: "name")).perform_check).to eq [
           "Label 'labels.exists' at filename:4 is missing parameters 'location' (expecting 'location', 'name')",
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.no_params",
         ]
       end
 
       it "raises error when unexpected parameter gets used" do
         expect(checker(visitors_for("labels.exists", params: "name,location,nope")).perform_check).to eq [
           "Label 'labels.exists' at filename:4 has unexpected parameters 'nope' (expecting 'location', 'name')",
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.no_params",
         ]
       end
 
       it "raises no errors when all parameters are used correctly" do
-        expect(checker(visitors_for("labels.exists", params: "name,location")).perform_check).to eq [] of String
+        expect(checker(visitors_for("labels.exists", params: "name,location")).perform_check).to eq [
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.no_params",
+        ]
       end
 
       it "ignores parameters for labels that don't exist" do
         expect(checker([visitor_for("labels.not.exists", params: "param"), visitor_for("labels.exists", params: "name,location")]).perform_check).to eq [
           "Missing label 'labels.not.exists' at filename:4 wasn't found in labels loaded from the_directory",
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.no_params",
+        ]
+      end
+
+      it "raises error when there are no expected params and params are supplied" do
+        expect(checker(visitors_for("labels.no_params", params: "something")).perform_check).to eq [
+          "Label 'labels.no_params' at filename:4 has unexpected parameters 'something' ",
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.exists",
         ]
       end
 
