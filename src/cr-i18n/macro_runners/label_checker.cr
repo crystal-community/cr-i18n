@@ -264,8 +264,6 @@ module CrI18n
             check_alias_parity("Language '#{lang}' plural label '#{check_plural_label}'", root_label, labels[check_plural_label])
           end
         end
-
-        # TODO: check parity for aliases
       end
 
       # Check that locale labels match root
@@ -308,8 +306,6 @@ module CrI18n
               check_alias_parity("Locale '#{lang}-#{locale}' plural label '#{check_plural_label}'", root_label, labels[check_plural_label])
             end
           end
-
-          # TODO: check parity for aliases
         end
       end
     end
