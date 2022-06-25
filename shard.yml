@@ -1,5 +1,5 @@
 name: cr-i18n
-version: 3.1.1
+version: 3.1.2
 
 authors:
   - Troy Sornson <troy@sornson.io>
@@ -11,6 +11,8 @@ development_dependencies:
     github: crystal-ameba/ameba
   crystal-kcov:
     git: ssh://git@git.chugger.lan:2222/tsornson/crystal-kcov
+  ic:
+    github: I3oris/ic
 
 
 crystal: 1.2.1

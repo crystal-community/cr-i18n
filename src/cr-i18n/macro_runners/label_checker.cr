@@ -96,18 +96,32 @@ module CrI18n
       queue
     end
 
+    # Regex that gets created should form:
+    # "some.target" => /^some\.target$/
+    # "some.#{interpolated}.target" => /^some\..*\.target$/
+    # "some.plural.target.other" => /^some\.plural\.target\..*$/
+    private def inclusive_regex_for_target(target)
+      /^#{target.gsub(/\./, "\\.").gsub(/.other$/, "..*").gsub(/#\{.*?\}/, ".*")}$/
+    end
+
     def add_to_verified_root
+      return unless resolved_target = resolve_target_to_existing_label_target(target)
+
+      if is_interpolated?
+        root_target = is_really_plural?(resolved_target) ? "#{target}.other" : target
+        root_target_regex = inclusive_regex_for_target(root_target)
+
+        @labels.root_labels.keys.each do |label|
+          @verified_root_label_keys << label if label.match(root_target_regex)
+        end
+      end
+
       resolve_aliases.each do |current_target_path|
         current_target = current_target_path[-1]
 
         @labels.root_labels.keys.each do |label|
           # current_target is guaranteed to resolve to a valid target in @labels.root_labels.keys
-          # Regex that gets created should form:
-          # "some.target" => /^some\.target$/
-          # "some.#{interpolated}.target" => /^some\..*\.target$/
-          # "some.plural.target.other" => /^some\.plural\.target\..*$/
-          regex = /^#{current_target.gsub(/\./, "\\.").gsub(/.other$/, "..*").gsub(/#\{.*?\}/, ".*")}$/
-          @verified_root_label_keys << label if label.match(regex)
+          @verified_root_label_keys << label if label.match(inclusive_regex_for_target(current_target))
         end
       end
 

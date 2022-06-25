@@ -27,24 +27,26 @@ unless_enforce do
 
       # let(checker) { CrI18n::LabelChecker.new(labels, visited, false, dir) }
       it "returns no errors if there are none" do
-        expect(checker(visitors_for("labels.exists")).perform_check).to eq [] of String
+        expect(checker([visitor_for("labels.exists"), visitor_for("labels.other_exists")]).perform_check).to eq [] of String
       end
 
       it "raises errors for unused labels" do
         expect(checker([] of String).perform_check).to eq [
-          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.exists",
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.exists\n\tlabels.other_exists",
         ]
       end
 
       it "raises errors for non-existent labels" do
         expect(checker([visitor_for("labels.does.not.exist"), visitor_for("labels.exists")]).perform_check).to eq [
           "Missing label 'labels.does.not.exist' at filename:4 wasn't found in labels loaded from the_directory",
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.other_exists",
         ]
       end
 
       it "raises errors for non-plural label being used as plural" do
         expect(checker(visitors_for("labels.exists", is_plural: true)).perform_check).to eq [
           "Label 'labels.exists' at filename:4 used the `count` parameter, but this label isn't plural (doesn't have the `other` sub field)",
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.other_exists",
         ]
       end
 
