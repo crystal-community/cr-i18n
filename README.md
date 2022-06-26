@@ -7,7 +7,7 @@ is more streamlined.
 
 Lots of inspiration is taken from [crystal-i18n/i18n](https://crystal-i18n.github.io/) as well as [BrucePerens/internationalize](https://github.com/BrucePerens/internationalize).
 
-Take a look at the [full documentation](https://Vici37.github.io/cr-i18n/).
+Take a look at the [full documentation](http://crystal-community.github.io/cr-i18n/).
 
 ## Installation
 
@@ -16,7 +16,7 @@ Take a look at the [full documentation](https://Vici37.github.io/cr-i18n/).
    ```yaml
    dependencies:
      cr-i18n:
-       github: vici37/cr-i18n
+       github: crystal-community/cr-i18n
    ```
 
 2. Run `shards install`

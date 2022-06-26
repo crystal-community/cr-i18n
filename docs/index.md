@@ -11,7 +11,7 @@ Add to your `shards.yml` file
 ```yaml
 dependencies:
   cr-i18n:
-    github: vici37/cr-i18n
+    github: crystal-community/cr-i18n
 ```
 
 and run `> shards install`
