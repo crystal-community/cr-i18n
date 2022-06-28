@@ -1,27 +1,29 @@
 require "./spec_helper"
 
-class TestNumberFormatter < CrI18n::Formatter(Int32)
-  TYPE = "number_formatter"
+module TestFormatters
+  class TestNumberFormatter < CrI18n::Formatter(Int32)
+    TYPE = "number_formatter"
 
-  def format(format, value) : String
-    base = format.not_nil!.to_i
-    value.to_s(base)
+    def format(format, value) : String
+      base = format.not_nil!.to_i
+      value.to_s(base)
+    end
   end
-end
 
-class TestNamedTupleFormatter < CrI18n::Formatter(NamedTuple(name: String, age: Int32, is_male: Bool))
-  TYPE = "user_formatter"
+  class TestNamedTupleFormatter < CrI18n::Formatter(NamedTuple(name: String, age: Int32, is_male: Bool))
+    TYPE = "user_formatter"
 
-  def format(format, value) : String
-    "#{value[:name]}, age #{value[:age]}, is #{value[:is_male] ? "male" : "female"}"
+    def format(format, value) : String
+      "#{value[:name]}, age #{value[:age]}, is #{value[:is_male] ? "male" : "female"}"
+    end
   end
-end
 
-class TestTimeFormatter < CrI18n::Formatter(Time)
-  TYPE = "time_formatter"
+  class TestTimeFormatter < CrI18n::Formatter(Time)
+    TYPE = "time_formatter"
 
-  def format(format : String?, value : Time) : String
-    value.to_s(format.not_nil!)
+    def format(format : String?, value : Time) : String
+      value.to_s(format.not_nil!)
+    end
   end
 end
 

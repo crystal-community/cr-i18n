@@ -9,7 +9,7 @@ module CrI18n
       {% begin %}
         {% for f in Formatter.subclasses %}
           {% raise "Type #{f} needs to define the constant TYPE as a string representing the name of the parameter it formats for" unless f.constant("TYPE") %}
-          @@{{f.id.underscore}} : {{f}} = {{f}}.new
+          @@{{"#{f}".gsub(/::/, "__").id.underscore}} : {{f}} = {{f}}.new
         {% end %}
 
         {% types_formatters = {} of Nil => Nil %}
@@ -23,7 +23,7 @@ module CrI18n
           {% begin %}
           case type
           {% for f in formatters %}
-          when {{f.constant("TYPE")}} then @@{{f.id.underscore}}.format(format, value)
+          when {{f.constant("TYPE")}} then @@{{"#{f}".gsub(/::/, "__").id.underscore}}.format(format, value)
           {% end %}
           else value
           end
