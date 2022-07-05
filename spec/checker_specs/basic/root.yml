@@ -1,3 +1,7 @@
+cri18n:
+  formatters:
+    not_used:
+      type: string
 labels:
   exists: exists
   other_exists: other

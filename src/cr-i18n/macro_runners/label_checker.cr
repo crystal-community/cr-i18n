@@ -369,6 +369,8 @@ module CrI18n
       # Cleanup unverified so that any verified plural labels accounts for all plural labels
       verified_plural = @verified_root_label_keys.select(&.ends_with?(".other"))
       unverified_root_label_keys.reject! { |label| verified_plural.any? { |f| label.starts_with?(f) } }
+      # Remove the 'cri18n' labels, those are for formatters and won't be referenced directly
+      unverified_root_label_keys.reject!(&.starts_with?("cri18n."))
 
       # Cleanup unverified so that plural labels only get complained about once
       unverified_plural, unverified_non_plural = partition_label_keys(unverified_root_label_keys)
