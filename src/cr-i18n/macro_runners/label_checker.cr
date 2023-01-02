@@ -26,6 +26,7 @@ module CrI18n
     end
 
     def resolve_target_to_existing_label_target(subject = target)
+      return nil if subject.gsub(/#\{.*?\}/, "").match(/[ !@$%^\+&\*\(\)\[\]]/)
       @labels.root_labels.keys.find(&.match(regex_for_target(subject)))
     end
 
@@ -341,7 +342,8 @@ module CrI18n
       return @results if @checked
 
       @visited_labels.each do |label_identifier|
-        @target, @filename, @line_number, @is_plural, @params, @interpolated = label_identifier.split(":")
+        # Only split the last 6 ':', in case the target isn't an actual label target and contains ':' characters
+        @target, @filename, @line_number, @is_plural, @params, @interpolated = label_identifier.reverse.split(/:/, 6).reverse.map(&.reverse)
 
         add_to_verified_root
         check_label_existence

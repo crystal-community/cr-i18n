@@ -208,6 +208,7 @@ label("this is my dummy text") # => Compiler error now
 
 # Without the -Denforce_labels flag, the `label` macro returns the string as-is
 label("this is my dummy text") # => "this is my dummy text"
+# NOTE: dummy text should not contain ';' characters, as this will break the compiler check parsing
 
 # RUNTIME CHECKS
 # By default, trying to retrieve a non-existent label doesn't throw
