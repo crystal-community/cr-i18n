@@ -53,6 +53,20 @@ unless_enforce do
       it "correctly matches interpolated string" do
         expect(checker(visitors_for("labels.\#{whatever}")).perform_check).to eq [] of String
       end
+
+      it "handles parens in target" do
+        expect(checker([visitor_for("(:)")]).perform_check).to eq [
+          "Missing label '(:)' at filename:4 wasn't found in labels loaded from the_directory",
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.exists\n\tlabels.other_exists",
+        ]
+      end
+
+      it "handles an open paren in target" do
+        expect(checker([visitor_for("(")]).perform_check).to eq [
+          "Missing label '(' at filename:4 wasn't found in labels loaded from the_directory",
+          "These labels are defined in the_directory but weren't used and can be removed:\n\tlabels.exists\n\tlabels.other_exists",
+        ]
+      end
     end
 
     context "with plural labels" do

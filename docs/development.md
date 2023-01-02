@@ -13,6 +13,8 @@ label("You have #{count} apples") # doesn't make sense yet if count == 1
 
 At some point you'll need to set what language / locale the intended user is using, and there are two approachs to doing that. One is by passing in the locale directly to `locale` as the second parameter, or alternatively (and more easily), you can set the locale for the request. The below are equivalent:
 
+NOTE: Free form strings as labels shouldn't contain the semicolon (';') character, as this is used under the hood as a delimiter when enforcing labels with the compiler check. Semicolons can be used freely within label files though.
+
 ```crystal
 label(some.label.path) # no locale set, will resolve from root
 
