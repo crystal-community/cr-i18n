@@ -26,8 +26,7 @@ module CrI18n
     end
 
     def resolve_target_to_existing_label_target(subject = target)
-      # A target can contain string interpolated data, so characters #, {, and } are omitted from the below
-      return nil if subject.match(/[\[\]\(\);:\?!@$%^&\*\+ ]/)
+      return nil if subject.gsub(/#\{.*?\}/, "").match(/[ !@$%^\+&\*\(\)\[\]]/)
       @labels.root_labels.keys.find(&.match(regex_for_target(subject)))
     end
 
